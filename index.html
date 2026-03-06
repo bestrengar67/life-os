@@ -590,14 +590,13 @@
         </div>
       </div>
 
-      <!-- Supabase Setup Banner -->
-      <div id="supabaseBanner" style="background:rgba(96,208,240,0.06);border:1px solid rgba(96,208,240,0.2);border-radius:12px;padding:18px 20px;margin-bottom:24px;">
-        <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;">☁ Cloud Sync Setup</div>
-        <div style="font-size:0.82rem;color:rgba(232,232,240,0.7);margin-bottom:14px;line-height:1.6;">Paste your Supabase URL and anon key below to enable automatic sync across all your devices.</div>
+      <!-- Supabase Setup — always visible -->
+      <div style="background:rgba(96,208,240,0.06);border:1px solid rgba(96,208,240,0.2);border-radius:12px;padding:18px 20px;margin-bottom:24px;">
+        <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;">☁ Cloud Sync</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
           <input id="sbUrlInput" placeholder="Supabase Project URL  (https://xxxx.supabase.co)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(96,208,240,0.4)'" onblur="this.style.borderColor='var(--border)'">
           <input id="sbKeyInput" placeholder="Supabase Anon Key  (eyJ…)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(96,208,240,0.4)'" onblur="this.style.borderColor='var(--border)'">
-          <div style="display:flex;gap:8px;margin-top:4px;">
+          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
             <button onclick="saveSupabaseConfig()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:none;background:var(--accent2);color:#0a0a0f;font-weight:600;cursor:pointer;">Save & Connect</button>
             <button onclick="testSync()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">Test Connection</button>
           </div>
@@ -1514,7 +1513,7 @@ function saveSupabaseConfig() {
   sessionStorage.setItem('lifeos_sb_anon', key);
   sbUrl = url; sbKey = key;
   syncConfigured = true;
-  document.getElementById('supabaseBanner').style.display = 'none';
+  setSyncStatus('syncing');
   pullFromSupabase().then(startAutoSync);
 }
 
@@ -1545,11 +1544,12 @@ function startAutoSync() {
 }
 
 function initSupabase() {
+  // Always populate fields with saved values
+  if (sbUrl) document.getElementById('sbUrlInput').value = sbUrl;
+  if (sbKey) document.getElementById('sbKeyInput').value = sbKey;
+
   if (sbUrl && sbKey) {
     syncConfigured = true;
-    document.getElementById('supabaseBanner').style.display = 'none';
-    document.getElementById('sbUrlInput').value = sbUrl;
-    document.getElementById('sbKeyInput').value = sbKey;
     pullFromSupabase().then(startAutoSync);
   }
 }
