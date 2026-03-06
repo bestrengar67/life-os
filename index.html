@@ -941,6 +941,7 @@ const todayIdx = (new Date().getDay() + 6) % 7;
 
 function renderHabits() {
   const labels = document.getElementById('habitDayLabels');
+  if (!labels) return;
   labels.innerHTML = '';
   dayNames.forEach((d, i) => {
     const el = document.createElement('div');
@@ -981,6 +982,7 @@ function renderHabits() {
 // ═══════════════════════════════════════
 function renderMetrics() {
   const list = document.getElementById('progressList');
+  if (!list) return;
   list.innerHTML = '';
   metricDefs.forEach(m => {
     const val = dayData.metrics[m.key];
@@ -1012,6 +1014,7 @@ function adjustMetric(key, step, max) {
 // ═══════════════════════════════════════
 function renderMood() {
   const row = document.getElementById('moodRow');
+  if (!row) return;
   row.innerHTML = '';
   moods.forEach((e, i) => {
     const btn = document.createElement('div');
@@ -1228,13 +1231,9 @@ function init() {
   renderInsight();
   renderGoals();
   renderTasks();
-  renderHabits();
-  renderMetrics();
-  renderMood();
   updateStreak();
   checkNotifStatus();
   setTimeout(drawSparkline, 200);
-  // Auto-save every 30s
   setInterval(() => { save(); updateStreak(); }, 30000);
 }
 
@@ -1467,9 +1466,6 @@ async function pullFromSupabase() {
       if (fresh) {
         dayData = fresh;
         renderTasks();
-        renderHabits();
-        renderMetrics();
-        renderMood();
         updateScoreDisplay();
         updateStreak();
         setTimeout(drawSparkline, 100);
