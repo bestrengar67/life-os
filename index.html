@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LIFE OS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -320,66 +320,129 @@
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:2px; }
 
-  /* Prevent iOS Safari auto-zoom on input focus */
-  @media (max-width:600px) {
-    input, select, textarea {
-      font-size: 16px !important;
+  /* ═══════════════════════════════════════
+     MOBILE - Complete override
+  ═══════════════════════════════════════ */
+  @media (max-width:768px) {
+    /* Prevent iOS auto-zoom on inputs */
+    input, textarea, select { font-size: 16px !important; }
+
+    /* Full width everything */
+    body { overflow-x: hidden; }
+    .app { overflow-x: hidden; }
+
+    /* Single column grid */
+    .grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background: transparent;
+      width: 100%;
     }
-  }
-  @media (max-width:600px) {
-    /* Layout */
-    .grid { grid-template-columns: 1fr; width: 100%; }
-    .col { width: 100%; }
-    .card { padding: 16px; width: 100%; box-sizing: border-box; }
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      width: 100%;
+    }
+
+    /* Cards */
+    .card {
+      padding: 18px 16px;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border);
+      width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
 
     /* Nav */
-    nav { padding: 12px 16px; }
-    .nav-logo { font-size: 1rem; }
+    nav { padding: 14px 16px; }
+    .nav-logo { font-size: 1.05rem; }
+    .nav-time { font-size: 0.8rem; }
 
     /* Tabs */
-    .tabs { padding: 6px 12px; }
-    .tab { font-size: 0.65rem; padding: 7px 12px; }
+    .tabs { padding: 8px 16px; top: 53px; }
+    .tab { font-size: 0.7rem; padding: 8px 16px; }
 
     /* Score */
-    .big-score { font-size: 3.5rem; }
-    .score-label { font-size: 0.78rem; }
-    .insight { font-size: 0.8rem; }
+    .big-score { font-size: 4rem; }
+    .score-label { font-size: 0.8rem; }
+    .score-delta { font-size: 0.75rem; }
+    .insight { font-size: 0.82rem; margin-top: 12px; }
 
-    /* Goals - fix the bars stretching off screen */
-    .goal-card { width: 100%; box-sizing: border-box; overflow: hidden; }
-    .progress-track { width: 100%; box-sizing: border-box; overflow: hidden; }
-    .progress-fill { max-width: 100%; }
+    /* Goals - constrain bars */
+    #goalList { width: 100%; }
+    .goal-card {
+      width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .goal-card .progress-track {
+      width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
 
     /* Tasks */
-    .task-list { max-height: none; }
-    .task-item { font-size: 0.85rem; }
+    .task-input-row { gap: 8px; }
+    .task-input { padding: 11px 12px; }
+    .task-list { max-height: none; overflow: visible; }
+    .task-item { padding: 11px 12px; font-size: 0.85rem; }
 
     /* Timer */
-    .timer-display { font-size: 3rem; }
-    .btn { padding: 10px 20px; }
+    .timer-display { font-size: 3.5rem; }
+    .timer-controls { gap: 10px; }
+    .btn { padding: 11px 22px; font-size: 0.72rem; }
 
-    /* Habits - fix only showing one */
-    .habit-week-label { width: 100%; box-sizing: border-box; }
-    .habit-grid { width: 100%; box-sizing: border-box; }
-    .habit-dot { min-width: 0; min-height: 0; }
+    /* Habits */
+    #habitRows { width: 100%; }
+    .habit-row { width: 100%; box-sizing: border-box; }
+    .habit-week-label {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      width: 100%;
+      box-sizing: border-box;
+      gap: 4px;
+    }
+    .habit-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      width: 100%;
+      box-sizing: border-box;
+      gap: 4px;
+    }
+    .habit-dot {
+      width: 100%;
+      aspect-ratio: 1;
+      min-width: 0;
+      min-height: 0;
+    }
 
     /* Metrics */
+    .progress-list { gap: 18px; }
+    .progress-item { width: 100%; box-sizing: border-box; }
+    .progress-track { width: 100%; box-sizing: border-box; overflow: hidden; }
+    .progress-header { font-size: 0.85rem; }
     .metric-btn { width: 36px; height: 36px; font-size: 1.1rem; }
+    .metric-current { font-size: 0.85rem; }
 
     /* Mood */
-    .mood-btn { height: 46px; font-size: 1.4rem; }
+    .mood-btn { height: 48px; font-size: 1.4rem; }
 
     /* Streak */
-    .streak-big { font-size: 2.8rem; }
+    .streak-big { font-size: 3rem; }
+    .streak-label { font-size: 0.75rem; }
 
     /* History */
-    .history-container { padding: 12px; }
-    .history-title { font-size: 1.6rem; }
-    .day-card-header { padding: 12px 14px; gap: 10px; }
-    .day-date-big { font-size: 1.6rem; }
-    .day-stat-val { font-size: 1.1rem; }
-    .day-score-badge { font-size: 1.4rem; }
+    .history-container { padding: 16px; }
+    .history-title { font-size: 1.8rem; }
+    .day-summary-row { gap: 12px; }
+    .day-stat-val { font-size: 1.2rem; }
+    .day-score-badge { font-size: 1.5rem; }
     .day-metrics-grid { grid-template-columns: 1fr 1fr; }
+    .day-card-header { padding: 14px 16px; }
+    .day-date-big { font-size: 1.8rem; }
   }
 </style>
 </head>
