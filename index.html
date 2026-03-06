@@ -599,6 +599,7 @@
           <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
             <button onclick="saveSupabaseConfig()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:none;background:var(--accent2);color:#0a0a0f;font-weight:600;cursor:pointer;">Save & Connect</button>
             <button onclick="testSync()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">Test Connection</button>
+            <button onclick="debugSync()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:1px solid var(--accent4);background:transparent;color:var(--accent4);cursor:pointer;">Debug Sync</button>
           </div>
         </div>
       </div>
@@ -1518,7 +1519,21 @@ function saveSupabaseConfig() {
   pullFromSupabase().then(startAutoSync);
 }
 
-async function testSync() {
+async function debugSync() {
+  let msg = '=== PUSH KEYS ===\n';
+  const allKeys = Object.keys(localStorage).filter(k => k.startsWith('lifeos_day_') || k === 'lifeos_scheduledTasks');
+  allKeys.forEach(k => {
+    const day_key = k === 'lifeos_scheduledTasks' ? 'scheduledTasks' : k.replace('lifeos_day_','');
+    msg += `local: ${k} → push as: ${day_key}\n`;
+  });
+  msg += '\n=== SUPABASE ROWS ===\n';
+  try {
+    const rows = await sbFetch('lifeos_days?select=day_key,updated_at');
+    rows.forEach(r => { msg += `remote key: ${r.day_key} updated: ${r.updated_at}\n`; });
+  } catch(e) { msg += 'Error fetching: ' + e.message; }
+  msg += '\n=== SYNC CONFIGURED: ' + syncConfigured + ' ===';
+  alert(msg);
+}
   const url = document.getElementById('sbUrlInput').value.trim().replace(/\/$/, '');
   const key = document.getElementById('sbKeyInput').value.trim();
   if (!url || !key) { alert('Please fill in both fields first.'); return; }
