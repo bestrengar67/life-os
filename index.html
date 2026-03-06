@@ -639,11 +639,7 @@ const TODAY = TODAY_KEY();
 
 // Load or init today's data
 let dayData = loadDay(TODAY) || {
-  tasks: [
-    {text:'Review project proposal', done:false, priority:'high'},
-    {text:'30 min walk outside', done:false, priority:'low'},
-    {text:'Write in journal', done:false, priority:'med'},
-  ],
+  tasks: [],
   metrics: { water:0, steps:0, deepWork:0, screenFree:0 },
   habits: [
     {name:'💧 Hydrate', done:[0,0,0,0,0,0,0]},
@@ -1533,6 +1529,7 @@ async function debugSync() {
 }
 
 async function testSync() {
+  const url = document.getElementById('sbUrlInput').value.trim().replace(/\/$/, '');
   const key = document.getElementById('sbKeyInput').value.trim();
   if (!url || !key) { alert('Please fill in both fields first.'); return; }
   try {
