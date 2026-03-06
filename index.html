@@ -857,7 +857,8 @@ function addTask() {
   input.value = '';
   renderTasks(); updateScoreDisplay(); save();
 }
-document.getElementById('taskInput').addEventListener('keydown', e => { if(e.key==='Enter') addTask(); });
+const _taskInput = document.getElementById('taskInput');
+if (_taskInput) _taskInput.addEventListener('keydown', e => { if(e.key==='Enter') addTask(); });
 
 // ═══════════════════════════════════════
 // TIMER
