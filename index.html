@@ -526,6 +526,11 @@
 
       <!-- RIGHT -->
       <div class="col">
+        <div class="card">
+          <div class="card-label">Daily Checklist <span id="checklistCount" style="color:var(--muted);font-size:0.7rem;"></span></div>
+          <div id="checklistItems" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
         <div class="card fill">
           <div class="card-label">7-Day Life Score</div>
           <canvas id="sparkCanvas" height="70"></canvas>
@@ -647,7 +652,18 @@ let dayData = loadDay(TODAY) || {
   moodHistory: [],
   timerSessions: 0,
   score: null,
+  checklist: [
+    {id:'gym', label:'🏋️ Gym', done: false},
+    {id:'study', label:'📚 Studying', done: false},
+  ],
 };
+// Ensure checklist exists on old saved data
+if (!dayData.checklist) {
+  dayData.checklist = [
+    {id:'gym', label:'🏋️ Gym', done: false},
+    {id:'study', label:'📚 Studying', done: false},
+  ];
+}
 
 // Habit colors
 const habitColors = ['var(--accent2)','var(--accent3)','var(--accent4)','var(--accent)','#a060f0'];
@@ -760,6 +776,11 @@ function calcScore() {
   if (dayData.mood !== null) score += dayData.mood;
   // Timer sessions
   score += Math.min(4, dayData.timerSessions);
+  // Checklist
+  if (dayData.checklist && dayData.checklist.length > 0) {
+    const doneChecks = dayData.checklist.filter(c => c.done).length;
+    score += Math.round((doneChecks / dayData.checklist.length) * 8);
+  }
   return Math.min(100, Math.max(0, score));
 }
 
@@ -889,9 +910,12 @@ function playAlarm() {
       o.start(ctx.currentTime + start);
       o.stop(ctx.currentTime + start + dur);
     };
-    beep(880, 0, 0.3);
-    beep(880, 0.35, 0.3);
-    beep(1100, 0.7, 0.5);
+    for (let i = 0; i < 10; i++) {
+      const offset = i * 1.2;
+      beep(880, offset, 0.3);
+      beep(880, offset + 0.35, 0.3);
+      beep(1100, offset + 0.7, 0.5);
+    }
   } catch(e) {}
 }
 
@@ -1229,11 +1253,34 @@ function toggleDayExpand(key) {
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
+function renderChecklist() {
+  const container = document.getElementById('checklistItems');
+  if (!container) return;
+  container.innerHTML = '';
+  const done = dayData.checklist.filter(c => c.done).length;
+  const countEl = document.getElementById('checklistCount');
+  if (countEl) countEl.textContent = `${done}/${dayData.checklist.length}`;
+  dayData.checklist.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = `display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;cursor:pointer;opacity:${item.done ? '0.5' : '1'};transition:opacity 0.2s;`;
+    div.innerHTML = `
+      <div style="width:18px;height:18px;border-radius:5px;border:2px solid ${item.done ? 'var(--accent)' : 'var(--muted)'};background:${item.done ? 'var(--accent)' : 'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#0a0a0f;font-weight:700;">${item.done ? '✓' : ''}</div>
+      <span style="font-size:0.88rem;font-weight:500;${item.done ? 'text-decoration:line-through;' : ''}">${item.label}</span>
+    `;
+    div.onclick = () => {
+      dayData.checklist[i].done = !dayData.checklist[i].done;
+      renderChecklist(); updateScoreDisplay(); save();
+    };
+    container.appendChild(div);
+  });
+}
+
 function init() {
   updateScoreDisplay();
   renderInsight();
   renderGoals();
   renderTasks();
+  renderChecklist();
   updateStreak();
   checkNotifStatus();
   setTimeout(drawSparkline, 200);
@@ -1284,7 +1331,7 @@ function renderTodayScheduled() {
     div.innerHTML = `
       <div style="width:16px;height:16px;border-radius:4px;border:2px solid ${task.done ? 'var(--accent)' : 'var(--muted)'};background:${task.done ? 'var(--accent)' : 'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#0a0a0f;">${task.done ? '✓' : ''}</div>
       <span style="flex:1;font-size:0.82rem;${task.done ? 'text-decoration:line-through;' : ''}">${task.text}</span>
-      ${status && !task.done ? `<span style="font-family:'DM Mono',monospace;font-size:0.62rem;color:${status.color};flex-shrink:0;">${status.label}</span>` : ''}
+      ${status ? `<span style="font-family:'DM Mono',monospace;font-size:0.62rem;color:${status.color};flex-shrink:0;">${status.label}</span>` : ''}
     `;
     div.onclick = () => { toggleScheduledTask(task.id); };
     container.appendChild(div);
