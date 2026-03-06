@@ -1534,7 +1534,8 @@ async function debugSync() {
   msg += '\n=== SYNC CONFIGURED: ' + syncConfigured + ' ===';
   alert(msg);
 }
-  const url = document.getElementById('sbUrlInput').value.trim().replace(/\/$/, '');
+
+async function testSync() {
   const key = document.getElementById('sbKeyInput').value.trim();
   if (!url || !key) { alert('Please fill in both fields first.'); return; }
   try {
