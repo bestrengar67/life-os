@@ -1414,7 +1414,7 @@ async function pushToSupabase() {
     const allKeys = Object.keys(localStorage).filter(k => k.startsWith('lifeos_day_') || k === 'lifeos_scheduledTasks');
     if (allKeys.length === 0) { setSyncStatus('ok'); return; }
     for (const k of allKeys) {
-      const day_key = k.replace('lifeos_','');
+      const day_key = k === 'lifeos_scheduledTasks' ? 'scheduledTasks' : k.replace('lifeos_day_','');
       const data = localStorage.getItem(k);
       const updated_at = new Date().toISOString();
       await fetch(sbUrl + '/rest/v1/lifeos_days', {
@@ -1442,12 +1442,13 @@ async function pullFromSupabase() {
     const rows = await sbFetch('lifeos_days?select=day_key,data,updated_at&order=updated_at.desc');
     let todayUpdated = false;
     rows.forEach(row => {
-      const localKey = 'lifeos_' + row.day_key;
+      const isScheduled = row.day_key === 'scheduledTasks';
+      const localKey = isScheduled ? 'lifeos_scheduledTasks' : 'lifeos_day_' + row.day_key;
       const existing = localStorage.getItem(localKey);
       if (!existing) {
         localStorage.setItem(localKey, row.data);
         if (row.day_key === TODAY) todayUpdated = true;
-        if (row.day_key === 'scheduledTasks') { scheduledTasks = JSON.parse(row.data) || []; renderScheduledTasks(); }
+        if (isScheduled) { try { scheduledTasks = JSON.parse(row.data) || []; renderScheduledTasks(); renderTodayScheduled(); } catch(e) {} }
       } else {
         const remoteTime = new Date(row.updated_at).getTime();
         let localTime = 0;
@@ -1455,7 +1456,7 @@ async function pullFromSupabase() {
         if (remoteTime > localTime) {
           localStorage.setItem(localKey, row.data);
           if (row.day_key === TODAY) todayUpdated = true;
-          if (row.day_key === 'scheduledTasks') { try { scheduledTasks = JSON.parse(row.data) || []; renderScheduledTasks(); } catch(e) {} }
+          if (isScheduled) { try { scheduledTasks = JSON.parse(row.data) || []; renderScheduledTasks(); renderTodayScheduled(); } catch(e) {} }
         }
       }
     });
