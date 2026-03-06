@@ -458,6 +458,7 @@
   <!-- TABS -->
   <div class="tabs">
     <button class="tab active" onclick="switchTab('today',this)">Today</button>
+    <button class="tab" onclick="switchTab('tasks',this)">Tasks</button>
     <button class="tab" onclick="switchTab('history',this)">History</button>
   </div>
 
@@ -527,18 +528,6 @@
 
       <!-- RIGHT -->
       <div class="col">
-        <div class="card">
-          <div class="card-label">Daily Metrics</div>
-          <div class="progress-list" id="progressList"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-label">Consistency Streak</div>
-          <div class="streak-big" id="streakNum">—</div>
-          <div class="streak-label">day streak · keep it alive</div>
-          <div class="streak-row" id="streakRow"></div>
-        </div>
-
         <div class="card fill">
           <div class="card-label">7-Day Life Score</div>
           <canvas id="sparkCanvas" height="70"></canvas>
@@ -550,6 +539,46 @@
       </div>
     </div>
   </div><!-- /today -->
+
+  <!-- TASKS VIEW -->
+  <div class="view" id="view-tasks">
+    <div class="history-container">
+      <div class="history-header">
+        <div>
+          <div class="history-title">Tasks</div>
+          <div class="history-subtitle">Add tasks with due dates and reminders</div>
+        </div>
+      </div>
+
+      <!-- Add Task Form -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;">
+        <div style="font-family:'DM Mono',monospace;font-size:0.63rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">New Task</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input id="newTaskText" placeholder="What needs to be done?" maxlength="120"
+            style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.9rem;outline:none;"
+            onfocus="this.style.borderColor='rgba(200,240,96,0.4)'" onblur="this.style.borderColor='var(--border)'">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:140px;">
+              <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Due Date</div>
+              <input type="date" id="newTaskDate"
+                style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;color-scheme:dark;"
+                onfocus="this.style.borderColor='rgba(200,240,96,0.4)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div style="flex:1;min-width:140px;">
+              <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Reminder</div>
+              <input type="datetime-local" id="newTaskReminder"
+                style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;color-scheme:dark;"
+                onfocus="this.style.borderColor='rgba(96,208,240,0.4)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+          </div>
+          <button onclick="addScheduledTask()" style="font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;padding:11px 20px;border-radius:8px;border:none;background:var(--accent);color:#0a0a0f;font-weight:600;cursor:pointer;align-self:flex-start;">Add Task</button>
+        </div>
+      </div>
+
+      <!-- Task List -->
+      <div id="scheduledTaskList" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+  </div>
 
   <!-- HISTORY VIEW -->
   <div class="view" id="view-history">
@@ -689,6 +718,7 @@ function switchTab(name, el) {
   el.classList.add('active');
   document.getElementById('view-' + name).classList.add('active');
   if (name === 'history') renderHistory();
+  if (name === 'tasks') renderScheduledTasks();
 }
 
 // ═══════════════════════════════════════
@@ -1211,7 +1241,125 @@ document.addEventListener('visibilitychange', function() {
 });
 
 // ═══════════════════════════════════════
-// SUPABASE SYNC
+// SCHEDULED TASKS
+// ═══════════════════════════════════════
+let scheduledTasks = loadGlobal('scheduledTasks', []);
+let reminderTimers = {};
+
+function saveScheduledTasks() {
+  saveGlobal('scheduledTasks', scheduledTasks);
+  if (syncConfigured) pushToSupabase();
+}
+
+function addScheduledTask() {
+  const text = document.getElementById('newTaskText').value.trim();
+  if (!text) { alert('Please enter a task.'); return; }
+  const dueDate = document.getElementById('newTaskDate').value;
+  const reminder = document.getElementById('newTaskReminder').value;
+  const task = {
+    id: Date.now(),
+    text,
+    dueDate: dueDate || null,
+    reminder: reminder || null,
+    done: false,
+    createdAt: Date.now()
+  };
+  scheduledTasks.unshift(task);
+  saveScheduledTasks();
+  if (reminder) scheduleReminder(task);
+  document.getElementById('newTaskText').value = '';
+  document.getElementById('newTaskDate').value = '';
+  document.getElementById('newTaskReminder').value = '';
+  renderScheduledTasks();
+}
+
+function toggleScheduledTask(id) {
+  const t = scheduledTasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; saveScheduledTasks(); renderScheduledTasks(); }
+}
+
+function deleteScheduledTask(id) {
+  scheduledTasks = scheduledTasks.filter(t => t.id !== id);
+  saveScheduledTasks();
+  renderScheduledTasks();
+}
+
+function scheduleReminder(task) {
+  if (!task.reminder) return;
+  const ms = new Date(task.reminder).getTime() - Date.now();
+  if (ms <= 0) return;
+  if (reminderTimers[task.id]) clearTimeout(reminderTimers[task.id]);
+  reminderTimers[task.id] = setTimeout(() => {
+    sendNotif('⏰ LIFE OS Reminder', task.text + (task.dueDate ? ' — due ' + formatDate(task.dueDate) : ''));
+  }, ms);
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+}
+
+function formatReminder(reminderStr) {
+  if (!reminderStr) return '';
+  const d = new Date(reminderStr);
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' }) + ' ' +
+    d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+}
+
+function getDueStatus(dueDate) {
+  if (!dueDate) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(dueDate + 'T00:00:00');
+  const diff = Math.round((due - today) / 86400000);
+  if (diff < 0) return { label: 'Overdue', color: 'var(--danger)' };
+  if (diff === 0) return { label: 'Due today', color: 'var(--accent4)' };
+  if (diff === 1) return { label: 'Due tomorrow', color: 'var(--accent4)' };
+  return { label: 'Due ' + formatDate(dueDate), color: 'var(--muted)' };
+}
+
+function renderScheduledTasks() {
+  const container = document.getElementById('scheduledTaskList');
+  if (!container) return;
+  container.innerHTML = '';
+  if (scheduledTasks.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:0.85rem;">No tasks yet. Add one above!</div>`;
+    return;
+  }
+  // Sort: undone first, then by due date
+  const sorted = [...scheduledTasks].sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
+    if (a.dueDate) return -1;
+    if (b.dueDate) return 1;
+    return b.createdAt - a.createdAt;
+  });
+  sorted.forEach(task => {
+    const status = getDueStatus(task.dueDate);
+    const div = document.createElement('div');
+    div.style.cssText = `background:var(--surface);border:1px solid ${task.done ? 'var(--border)' : 'var(--border2)'};border-radius:var(--radius);padding:16px 18px;display:flex;align-items:flex-start;gap:12px;opacity:${task.done ? '0.5' : '1'};transition:opacity 0.2s;`;
+    div.innerHTML = `
+      <div onclick="toggleScheduledTask(${task.id})" style="width:18px;height:18px;border-radius:5px;border:2px solid ${task.done ? 'var(--accent)' : 'var(--muted)'};background:${task.done ? 'var(--accent)' : 'transparent'};flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#0a0a0f;">${task.done ? '✓' : ''}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.88rem;font-weight:500;${task.done ? 'text-decoration:line-through;' : ''}margin-bottom:5px;">${task.text}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          ${status ? `<span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:${status.color};">${status.label}</span>` : ''}
+          ${task.reminder ? `<span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--accent2);">🔔 ${formatReminder(task.reminder)}</span>` : ''}
+        </div>
+      </div>
+      <button onclick="deleteScheduledTask(${task.id})" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0;flex-shrink:0;" title="Delete">✕</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// Init reminders on load
+function initReminders() {
+  scheduledTasks.forEach(t => { if (!t.done && t.reminder) scheduleReminder(t); });
+  renderScheduledTasks();
+}
+
+window.addEventListener('load', initReminders);
 // ═══════════════════════════════════════
 let sbUrl = localStorage.getItem('lifeos_sb_url') || sessionStorage.getItem('lifeos_sb_url') || '';
 let sbKey = localStorage.getItem('lifeos_sb_anon') || sessionStorage.getItem('lifeos_sb_anon') || '';
@@ -1244,10 +1392,10 @@ async function pushToSupabase() {
   if (!syncConfigured) return;
   try {
     setSyncStatus('syncing');
-    const allKeys = Object.keys(localStorage).filter(k => k.startsWith('lifeos_day_'));
+    const allKeys = Object.keys(localStorage).filter(k => k.startsWith('lifeos_day_') || k === 'lifeos_scheduledTasks');
     if (allKeys.length === 0) { setSyncStatus('ok'); return; }
     for (const k of allKeys) {
-      const day_key = k.replace('lifeos_day_','');
+      const day_key = k.replace('lifeos_','');
       const data = localStorage.getItem(k);
       const updated_at = new Date().toISOString();
       await fetch(sbUrl + '/rest/v1/lifeos_days', {
@@ -1275,19 +1423,20 @@ async function pullFromSupabase() {
     const rows = await sbFetch('lifeos_days?select=day_key,data,updated_at&order=updated_at.desc');
     let todayUpdated = false;
     rows.forEach(row => {
-      const localKey = 'lifeos_day_' + row.day_key;
+      const localKey = 'lifeos_' + row.day_key;
       const existing = localStorage.getItem(localKey);
       if (!existing) {
         localStorage.setItem(localKey, row.data);
         if (row.day_key === TODAY) todayUpdated = true;
+        if (row.day_key === 'scheduledTasks') { scheduledTasks = JSON.parse(row.data) || []; renderScheduledTasks(); }
       } else {
-        // Always trust remote if it has a newer updated_at
         const remoteTime = new Date(row.updated_at).getTime();
         let localTime = 0;
         try { localTime = JSON.parse(existing)._savedAt || 0; } catch(e) {}
         if (remoteTime > localTime) {
           localStorage.setItem(localKey, row.data);
           if (row.day_key === TODAY) todayUpdated = true;
+          if (row.day_key === 'scheduledTasks') { try { scheduledTasks = JSON.parse(row.data) || []; renderScheduledTasks(); } catch(e) {} }
         }
       }
     });
