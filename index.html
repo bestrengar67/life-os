@@ -847,6 +847,7 @@ function toggleTask(i) {
 }
 function addTask() {
   const input = document.getElementById('taskInput');
+  if (!input) return;
   const val = input.value.trim();
   if (!val) return;
   dayData.tasks.unshift({text:val, done:false, priority:['high','med','low'][Math.floor(Math.random()*3)]});
@@ -971,7 +972,8 @@ function renderHabits() {
   });
 
   const doneToday = dayData.habits.filter(h => h.done[todayIdx]).length;
-  document.getElementById('habitScore').textContent = `${doneToday}/${dayData.habits.length} today`;
+  const habitScore = document.getElementById('habitScore');
+  if (habitScore) habitScore.textContent = `${doneToday}/${dayData.habits.length} today`;
 }
 
 // ═══════════════════════════════════════
@@ -1025,13 +1027,15 @@ function renderMood() {
     row.appendChild(btn);
   });
   const hist = document.getElementById('moodHistory');
-  hist.innerHTML = '';
-  dayData.moodHistory.slice(-20).forEach(entry => {
-    const pip = document.createElement('div');
-    pip.className = 'mood-pip';
-    pip.style.background = moodColors[entry.mood];
-    hist.appendChild(pip);
-  });
+  if (hist) {
+    hist.innerHTML = '';
+    dayData.moodHistory.slice(-20).forEach(entry => {
+      const pip = document.createElement('div');
+      pip.className = 'mood-pip';
+      pip.style.background = moodColors[entry.mood];
+      hist.appendChild(pip);
+    });
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1053,16 +1057,19 @@ function updateStreak() {
   // Simple streak from today backwards
   let s = 0;
   for (let i = segments.length-1; i >= 0; i--) { if(segments[i]) s++; else break; }
-  document.getElementById('streakNum').textContent = Math.max(1, s);
+  const streakNum = document.getElementById('streakNum');
+  if (streakNum) streakNum.textContent = Math.max(1, s);
   const row = document.getElementById('streakRow');
-  row.innerHTML = '';
-  segments.forEach(v => {
-    const seg = document.createElement('div');
-    seg.className = 'streak-seg';
-    seg.style.background = v ? 'var(--accent4)' : 'var(--surface2)';
-    if(v) seg.style.boxShadow = '0 0 5px rgba(240,160,96,0.4)';
-    row.appendChild(seg);
-  });
+  if (row) {
+    row.innerHTML = '';
+    segments.forEach(v => {
+      const seg = document.createElement('div');
+      seg.className = 'streak-seg';
+      seg.style.background = v ? 'var(--accent4)' : 'var(--surface2)';
+      if(v) seg.style.boxShadow = '0 0 5px rgba(240,160,96,0.4)';
+      row.appendChild(seg);
+    });
+  }
 }
 
 // ═══════════════════════════════════════
