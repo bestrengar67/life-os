@@ -1245,11 +1245,15 @@ async function pushToSupabase() {
   try {
     setSyncStatus('syncing');
     const allKeys = Object.keys(localStorage).filter(k => k.startsWith('lifeos_day_'));
-    const rows = allKeys.map(k => ({
-      day_key: k.replace('lifeos_day_',''),
-      data: localStorage.getItem(k),
-      updated_at: new Date().toISOString()
-    }));
+    const rows = allKeys.map(k => {
+      let savedAt = null;
+      try { savedAt = JSON.parse(localStorage.getItem(k))._savedAt || null; } catch(e) {}
+      return {
+        day_key: k.replace('lifeos_day_',''),
+        data: localStorage.getItem(k),
+        updated_at: savedAt ? new Date(savedAt).toISOString() : new Date().toISOString()
+      };
+    });
     if (rows.length === 0) { setSyncStatus('ok'); return; }
     await sbFetch('lifeos_days?on_conflict=day_key', 'POST', rows);
     setSyncStatus('ok');
@@ -1264,24 +1268,41 @@ async function pullFromSupabase() {
   try {
     setSyncStatus('syncing');
     const rows = await sbFetch('lifeos_days?select=day_key,data,updated_at&order=updated_at.desc');
+    let todayUpdated = false;
     rows.forEach(row => {
       const localKey = 'lifeos_day_' + row.day_key;
       const existing = localStorage.getItem(localKey);
       if (!existing) {
         localStorage.setItem(localKey, row.data);
+        if (row.day_key === TODAY) todayUpdated = true;
       } else {
         try {
           const localData = JSON.parse(existing);
           const remoteTime = new Date(row.updated_at).getTime();
           const localTime = localData._savedAt || 0;
-          if (remoteTime > localTime) localStorage.setItem(localKey, row.data);
+          if (remoteTime > localTime) {
+            localStorage.setItem(localKey, row.data);
+            if (row.day_key === TODAY) todayUpdated = true;
+          }
         } catch(e) {}
       }
     });
     setSyncStatus('ok');
+    // If today's data was updated from remote, reload it into the UI
+    if (todayUpdated) {
+      const fresh = loadDay(TODAY);
+      if (fresh) {
+        dayData = fresh;
+        renderTasks();
+        renderHabits();
+        renderMetrics();
+        renderMood();
+        updateScoreDisplay();
+        updateStreak();
+        setTimeout(drawSparkline, 100);
+      }
+    }
     renderHistory();
-    updateStreak();
-    setTimeout(drawSparkline, 100);
   } catch(e) {
     console.error('Supabase pull error:', e);
     setSyncStatus('error');
@@ -1348,7 +1369,7 @@ function startAutoSync() {
   setInterval(function() {
     pushToSupabase();
     pullFromSupabase();
-  }, 60000);
+  }, 30000);
 }
 
 function initSupabase() {
