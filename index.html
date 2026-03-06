@@ -492,11 +492,14 @@
       <div class="col">
         <div class="card">
           <div class="card-label">Today's Tasks <span id="taskCount">0/0</span></div>
-          <div class="task-input-row">
-            <input class="task-input" id="taskInput" placeholder="Add a task…" maxlength="80">
-            <button class="btn primary" onclick="addTask()">+</button>
-          </div>
           <div class="task-list" id="taskList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Upcoming Tasks</div>
+          <div id="todayScheduledList" style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-size:0.78rem;color:var(--muted);">No upcoming tasks.</div>
+          </div>
         </div>
 
         <div class="card">
@@ -546,7 +549,7 @@
       <div class="history-header">
         <div>
           <div class="history-title">Tasks</div>
-          <div class="history-subtitle">Add tasks with due dates and reminders</div>
+          <div class="history-subtitle">Add tasks with due dates</div>
         </div>
       </div>
 
@@ -556,20 +559,13 @@
         <div style="display:flex;flex-direction:column;gap:10px;">
           <input id="newTaskText" placeholder="What needs to be done?" maxlength="120"
             style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-family:'Instrument Sans',sans-serif;font-size:0.9rem;outline:none;"
-            onfocus="this.style.borderColor='rgba(200,240,96,0.4)'" onblur="this.style.borderColor='var(--border)'">
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:140px;">
-              <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Due Date</div>
-              <input type="date" id="newTaskDate"
-                style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;color-scheme:dark;"
-                onfocus="this.style.borderColor='rgba(200,240,96,0.4)'" onblur="this.style.borderColor='var(--border)'">
-            </div>
-            <div style="flex:1;min-width:140px;">
-              <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Reminder</div>
-              <input type="datetime-local" id="newTaskReminder"
-                style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;color-scheme:dark;"
-                onfocus="this.style.borderColor='rgba(96,208,240,0.4)'" onblur="this.style.borderColor='var(--border)'">
-            </div>
+            onfocus="this.style.borderColor='rgba(200,240,96,0.4)'" onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter')addScheduledTask()">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Due Date</div>
+            <input type="date" id="newTaskDate"
+              style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;color-scheme:dark;"
+              onfocus="this.style.borderColor='rgba(200,240,96,0.4)'" onblur="this.style.borderColor='var(--border)'">
           </div>
           <button onclick="addScheduledTask()" style="font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;padding:11px 20px;border-radius:8px;border:none;background:var(--accent);color:#0a0a0f;font-weight:600;cursor:pointer;align-self:flex-start;">Add Task</button>
         </div>
@@ -882,6 +878,26 @@ function renderTimer() {
   const pct = timerRemaining / timerDuration;
   document.getElementById('arcCircle').style.strokeDashoffset = circumference * (1 - pct);
 }
+function playAlarm() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const beep = (freq, start, dur) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.4, ctx.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      o.start(ctx.currentTime + start);
+      o.stop(ctx.currentTime + start + dur);
+    };
+    beep(880, 0, 0.3);
+    beep(880, 0.35, 0.3);
+    beep(1100, 0.7, 0.5);
+  } catch(e) {}
+}
+
 function toggleTimer() {
   if (timerRunning) {
     clearInterval(timerInterval); timerRunning = false;
@@ -894,14 +910,12 @@ function toggleTimer() {
         clearInterval(timerInterval); timerRunning = false;
         document.getElementById('timerBtn').textContent = 'Start';
         timerRemaining = 0; renderTimer();
-        // Session complete
         dayData.timerSessions++;
         document.getElementById('timerSessions').textContent = `${dayData.timerSessions} session${dayData.timerSessions!==1?'s':''} today`;
         save(); updateScoreDisplay();
-        // Notification
+        playAlarm();
         const mins = Math.round(timerDuration/60);
         sendNotif('⏰ LIFE OS — Timer Done!', `Your ${mins}-minute session is complete. Great work!`);
-        // Visual flash
         document.getElementById('timerDisplay').style.color = 'var(--accent)';
         setTimeout(() => { document.getElementById('timerDisplay').style.color = 'var(--accent2)'; }, 1500);
         return;
@@ -1240,11 +1254,41 @@ document.addEventListener('visibilitychange', function() {
   }
 });
 
+function renderTodayScheduled() {
+  const container = document.getElementById('todayScheduledList');
+  if (!container) return;
+  const sorted = [...scheduledTasks]
+    .filter(t => !t.done)
+    .sort((a, b) => {
+      if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return b.createdAt - a.createdAt;
+    })
+    .slice(0, 8);
+  if (sorted.length === 0) {
+    container.innerHTML = `<div style="font-size:0.78rem;color:var(--muted);">No upcoming tasks.</div>`;
+    return;
+  }
+  container.innerHTML = '';
+  sorted.forEach(task => {
+    const status = getDueStatus(task.dueDate);
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--surface2);border-radius:8px;font-size:0.81rem;cursor:pointer;';
+    div.innerHTML = `
+      <div style="width:15px;height:15px;border-radius:4px;border:1.5px solid var(--muted);flex-shrink:0;"></div>
+      <span style="flex:1;">${task.text}</span>
+      ${status ? `<span style="font-family:'DM Mono',monospace;font-size:0.62rem;color:${status.color};flex-shrink:0;">${status.label}</span>` : ''}
+    `;
+    div.onclick = () => { toggleScheduledTask(task.id); };
+    container.appendChild(div);
+  });
+}
+
 // ═══════════════════════════════════════
 // SCHEDULED TASKS
 // ═══════════════════════════════════════
 let scheduledTasks = loadGlobal('scheduledTasks', []);
-let reminderTimers = {};
 
 function saveScheduledTasks() {
   saveGlobal('scheduledTasks', scheduledTasks);
@@ -1255,56 +1299,37 @@ function addScheduledTask() {
   const text = document.getElementById('newTaskText').value.trim();
   if (!text) { alert('Please enter a task.'); return; }
   const dueDate = document.getElementById('newTaskDate').value;
-  const reminder = document.getElementById('newTaskReminder').value;
   const task = {
     id: Date.now(),
     text,
     dueDate: dueDate || null,
-    reminder: reminder || null,
     done: false,
     createdAt: Date.now()
   };
   scheduledTasks.unshift(task);
   saveScheduledTasks();
-  if (reminder) scheduleReminder(task);
   document.getElementById('newTaskText').value = '';
   document.getElementById('newTaskDate').value = '';
-  document.getElementById('newTaskReminder').value = '';
   renderScheduledTasks();
+  renderTodayScheduled();
 }
 
 function toggleScheduledTask(id) {
   const t = scheduledTasks.find(t => t.id === id);
-  if (t) { t.done = !t.done; saveScheduledTasks(); renderScheduledTasks(); }
+  if (t) { t.done = !t.done; saveScheduledTasks(); renderScheduledTasks(); renderTodayScheduled(); }
 }
 
 function deleteScheduledTask(id) {
   scheduledTasks = scheduledTasks.filter(t => t.id !== id);
   saveScheduledTasks();
   renderScheduledTasks();
-}
-
-function scheduleReminder(task) {
-  if (!task.reminder) return;
-  const ms = new Date(task.reminder).getTime() - Date.now();
-  if (ms <= 0) return;
-  if (reminderTimers[task.id]) clearTimeout(reminderTimers[task.id]);
-  reminderTimers[task.id] = setTimeout(() => {
-    sendNotif('⏰ LIFE OS Reminder', task.text + (task.dueDate ? ' — due ' + formatDate(task.dueDate) : ''));
-  }, ms);
+  renderTodayScheduled();
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
-}
-
-function formatReminder(reminderStr) {
-  if (!reminderStr) return '';
-  const d = new Date(reminderStr);
-  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' }) + ' ' +
-    d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
 }
 
 function getDueStatus(dueDate) {
@@ -1326,7 +1351,6 @@ function renderScheduledTasks() {
     container.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:0.85rem;">No tasks yet. Add one above!</div>`;
     return;
   }
-  // Sort: undone first, then by due date
   const sorted = [...scheduledTasks].sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1;
     if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate);
@@ -1342,10 +1366,7 @@ function renderScheduledTasks() {
       <div onclick="toggleScheduledTask(${task.id})" style="width:18px;height:18px;border-radius:5px;border:2px solid ${task.done ? 'var(--accent)' : 'var(--muted)'};background:${task.done ? 'var(--accent)' : 'transparent'};flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:#0a0a0f;">${task.done ? '✓' : ''}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:0.88rem;font-weight:500;${task.done ? 'text-decoration:line-through;' : ''}margin-bottom:5px;">${task.text}</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-          ${status ? `<span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:${status.color};">${status.label}</span>` : ''}
-          ${task.reminder ? `<span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--accent2);">🔔 ${formatReminder(task.reminder)}</span>` : ''}
-        </div>
+        ${status ? `<div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:${status.color};">${status.label}</div>` : ''}
       </div>
       <button onclick="deleteScheduledTask(${task.id})" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0;flex-shrink:0;" title="Delete">✕</button>
     `;
@@ -1353,13 +1374,12 @@ function renderScheduledTasks() {
   });
 }
 
-// Init reminders on load
-function initReminders() {
-  scheduledTasks.forEach(t => { if (!t.done && t.reminder) scheduleReminder(t); });
+function initScheduledTasks() {
   renderScheduledTasks();
+  renderTodayScheduled();
 }
 
-window.addEventListener('load', initReminders);
+window.addEventListener('load', initScheduledTasks);
 // ═══════════════════════════════════════
 let sbUrl = localStorage.getItem('lifeos_sb_url') || sessionStorage.getItem('lifeos_sb_url') || '';
 let sbKey = localStorage.getItem('lifeos_sb_anon') || sessionStorage.getItem('lifeos_sb_anon') || '';
@@ -1457,7 +1477,7 @@ async function pullFromSupabase() {
     renderHistory();
   } catch(e) {
     console.error('[LIFEOS] Pull error:', e);
-    setSyncStatus('error');
+    if (syncConfigured) setSyncStatus('error');
   }
 }
 
