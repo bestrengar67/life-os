@@ -1258,12 +1258,21 @@ async function pushToSupabase() {
     setSyncStatus('syncing');
     const allKeys = Object.keys(localStorage).filter(k => k.startsWith('lifeos_day_'));
     if (allKeys.length === 0) { setSyncStatus('ok'); return; }
-    const rows = allKeys.map(k => ({
-      day_key: k.replace('lifeos_day_',''),
-      data: localStorage.getItem(k),
-      updated_at: new Date().toISOString()
-    }));
-    await sbFetch('lifeos_days?on_conflict=day_key', 'POST', rows);
+    for (const k of allKeys) {
+      const day_key = k.replace('lifeos_day_','');
+      const data = localStorage.getItem(k);
+      const updated_at = new Date().toISOString();
+      await fetch(sbUrl + '/rest/v1/lifeos_days', {
+        method: 'POST',
+        headers: {
+          'apikey': sbKey,
+          'Authorization': 'Bearer ' + sbKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({ day_key, data, updated_at })
+      });
+    }
     setSyncStatus('ok');
   } catch(e) {
     console.error('[LIFEOS] Push error:', e);
