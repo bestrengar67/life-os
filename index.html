@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>LIFE OS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -323,12 +323,37 @@
   }
   @media (max-width:600px) {
     .grid { grid-template-columns:1fr; }
-    .big-score { font-size:3.8rem; }
-    nav { padding:14px 16px; }
-    .tabs { padding:8px 16px; }
-    .history-container { padding:16px; }
-    .day-summary-row { gap:10px; }
+    .big-score { font-size:3.2rem; }
+    nav { padding:12px 16px; }
+    nav .nav-logo { font-size:1rem; }
+    .tabs { padding:6px 12px; gap:2px; }
+    .tab { font-size:0.65rem; padding:7px 12px; }
+    .card { padding:16px; }
+    .card-label { font-size:0.6rem; }
+    .history-container { padding:12px; }
+    .day-summary-row { gap:8px; }
     .day-metrics-grid { grid-template-columns:1fr 1fr; }
+    .day-stat-val { font-size:1.1rem; }
+    .day-score-badge { font-size:1.4rem; }
+    .timer-display { font-size:3rem; }
+    .btn { padding:10px 16px; font-size:0.68rem; }
+    .task-input { font-size:0.85rem; padding:10px 12px; }
+    .task-item { padding:10px 11px; font-size:0.85rem; }
+    .metric-btn { width:32px; height:32px; font-size:1.1rem; }
+    .metric-current { font-size:0.85rem; }
+    .mood-btn { height:44px; font-size:1.3rem; }
+    .progress-header { font-size:0.85rem; }
+    .habit-dot { border-radius:5px; }
+    .streak-big { font-size:2.6rem; }
+    .insight { font-size:0.8rem; }
+    .big-score { font-size:4rem; }
+    .score-label { font-size:0.78rem; }
+    .goal-card { padding:11px; }
+    .goal-title { font-size:0.82rem; }
+    .day-card-header { padding:12px 14px; gap:10px; }
+    .day-date-big { font-size:1.6rem; }
+    .history-title { font-size:1.6rem; }
+    .task-list { max-height:none; }
   }
 </style>
 </head>
