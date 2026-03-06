@@ -318,10 +318,14 @@
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:2px; }
 
-  @media (max-width:900px) {
-    .grid { grid-template-columns:1fr 1fr; }
+  /* Prevent iOS Safari auto-zoom on input focus */
+  @media (max-width:600px) {
+    input, select, textarea, .task-input, #sbUrlInput, #sbKeyInput {
+      font-size: 16px !important;
+    }
   }
   @media (max-width:600px) {
+    html { font-size: 14px; }
     .grid { grid-template-columns:1fr; }
     .big-score { font-size:3.2rem; }
     nav { padding:12px 16px; }
@@ -346,7 +350,6 @@
     .habit-dot { border-radius:5px; }
     .streak-big { font-size:2.6rem; }
     .insight { font-size:0.8rem; }
-    .big-score { font-size:4rem; }
     .score-label { font-size:0.78rem; }
     .goal-card { padding:11px; }
     .goal-title { font-size:0.82rem; }
@@ -1124,8 +1127,8 @@ window.addEventListener('beforeunload', save);
 // ═══════════════════════════════════════
 // SUPABASE SYNC
 // ═══════════════════════════════════════
-let sbUrl = localStorage.getItem('lifeos_sb_url') || '';
-let sbKey = localStorage.getItem('lifeos_sb_anon') || '';
+let sbUrl = localStorage.getItem('lifeos_sb_url') || sessionStorage.getItem('lifeos_sb_url') || '';
+let sbKey = localStorage.getItem('lifeos_sb_anon') || sessionStorage.getItem('lifeos_sb_anon') || '';
 let syncConfigured = false;
 
 function getDeviceId() {
@@ -1228,6 +1231,8 @@ function saveSupabaseConfig() {
   if (!url || !key) { alert('Please fill in both fields.'); return; }
   localStorage.setItem('lifeos_sb_url', url);
   localStorage.setItem('lifeos_sb_anon', key);
+  sessionStorage.setItem('lifeos_sb_url', url);
+  sessionStorage.setItem('lifeos_sb_anon', key);
   sbUrl = url; sbKey = key;
   syncConfigured = true;
   document.getElementById('supabaseBanner').style.display = 'none';
