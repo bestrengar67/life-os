@@ -1208,7 +1208,7 @@ function init() {
 
 window.addEventListener('load', function() {
   init();
-  window.scrollTo(0, 0);
+  setTimeout(function() { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); }, 50);
 });
 window.addEventListener('resize', drawSparkline);
 window.addEventListener('beforeunload', save);
@@ -1257,20 +1257,16 @@ async function pushToSupabase() {
   try {
     setSyncStatus('syncing');
     const allKeys = Object.keys(localStorage).filter(k => k.startsWith('lifeos_day_'));
-    const rows = allKeys.map(k => {
-      let savedAt = null;
-      try { savedAt = JSON.parse(localStorage.getItem(k))._savedAt || null; } catch(e) {}
-      return {
-        day_key: k.replace('lifeos_day_',''),
-        data: localStorage.getItem(k),
-        updated_at: savedAt ? new Date(savedAt).toISOString() : new Date().toISOString()
-      };
-    });
-    if (rows.length === 0) { setSyncStatus('ok'); return; }
+    if (allKeys.length === 0) { setSyncStatus('ok'); return; }
+    const rows = allKeys.map(k => ({
+      day_key: k.replace('lifeos_day_',''),
+      data: localStorage.getItem(k),
+      updated_at: new Date().toISOString()
+    }));
     await sbFetch('lifeos_days?on_conflict=day_key', 'POST', rows);
     setSyncStatus('ok');
   } catch(e) {
-    console.error('Supabase push error:', e);
+    console.error('[LIFEOS] Push error:', e);
     setSyncStatus('error');
   }
 }
@@ -1288,19 +1284,17 @@ async function pullFromSupabase() {
         localStorage.setItem(localKey, row.data);
         if (row.day_key === TODAY) todayUpdated = true;
       } else {
-        try {
-          const localData = JSON.parse(existing);
-          const remoteTime = new Date(row.updated_at).getTime();
-          const localTime = localData._savedAt || 0;
-          if (remoteTime > localTime) {
-            localStorage.setItem(localKey, row.data);
-            if (row.day_key === TODAY) todayUpdated = true;
-          }
-        } catch(e) {}
+        // Always trust remote if it has a newer updated_at
+        const remoteTime = new Date(row.updated_at).getTime();
+        let localTime = 0;
+        try { localTime = JSON.parse(existing)._savedAt || 0; } catch(e) {}
+        if (remoteTime > localTime) {
+          localStorage.setItem(localKey, row.data);
+          if (row.day_key === TODAY) todayUpdated = true;
+        }
       }
     });
     setSyncStatus('ok');
-    // If today's data was updated from remote, reload it into the UI
     if (todayUpdated) {
       const fresh = loadDay(TODAY);
       if (fresh) {
@@ -1316,7 +1310,7 @@ async function pullFromSupabase() {
     }
     renderHistory();
   } catch(e) {
-    console.error('Supabase pull error:', e);
+    console.error('[LIFEOS] Pull error:', e);
     setSyncStatus('error');
   }
 }
@@ -1398,7 +1392,7 @@ function initSupabase() {
 const _baseSave = save;
 window.save = function() {
   dayData._savedAt = Date.now();
-  _baseSave();
+  saveDay(TODAY, dayData); // save with timestamp
   if (syncConfigured) pushToSupabase();
 };
 
