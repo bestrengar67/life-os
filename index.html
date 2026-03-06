@@ -1209,6 +1209,14 @@ function init() {
 window.addEventListener('load', init);
 window.addEventListener('resize', drawSparkline);
 window.addEventListener('beforeunload', save);
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') {
+    save();
+    pushToSupabase();
+  } else if (document.visibilityState === 'visible') {
+    pullFromSupabase();
+  }
+});
 
 // ═══════════════════════════════════════
 // SUPABASE SYNC
