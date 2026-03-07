@@ -147,7 +147,20 @@
   .view.active { display:block; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-  /* ── GRID ── */
+  /* ── TODAY LAYOUT ── */
+  .today-layout { display:flex; flex-direction:column; gap:1px; background:var(--border); }
+  .today-top { display:grid; grid-template-columns:1fr 340px; gap:1px; background:var(--border); }
+  .today-bottom { display:grid; grid-template-columns:1fr 340px; gap:1px; background:var(--border); }
+  .today-score-card { background:var(--surface); }
+  .today-spark-card { background:var(--surface); }
+  .today-tasks-card { background:var(--surface); }
+  .today-checklist-card { background:var(--surface); }
+
+  @media (max-width: 768px) {
+    .today-top, .today-bottom { grid-template-columns:1fr; }
+  }
+
+  /* ── GRID (legacy, keep for other views) ── */
   .grid {
     display:grid;
     grid-template-columns: 280px 1fr 300px;
@@ -536,57 +549,58 @@
   <!-- TABS -->
   <div class="tabs">
     <button class="tab active" onclick="switchTab('today',this)">Today</button>
-    <button class="tab" onclick="switchTab('tasks',this)">Tasks</button>
     <button class="tab" onclick="switchTab('history',this)">History</button>
   </div>
 
   <!-- TODAY VIEW -->
   <div class="view active" id="view-today">
-    <div class="grid">
+    <div class="today-layout">
 
-      <!-- LEFT -->
-      <div class="col">
-        <div class="card">
+      <!-- TOP ROW: Score + Sparkline -->
+      <div class="today-top">
+        <div class="card today-score-card">
           <div class="card-label">Life Score <span id="scoreDate">—</span></div>
-          <!-- Notification Banner -->
           <div class="notif-banner" id="notifBanner">
             <span class="notif-icon">🔔</span>
             <span>Enable notifications for timer alerts</span>
             <button class="notif-btn" onclick="requestNotifPermission()">Enable</button>
           </div>
-          <div class="big-score" id="lifeScore">—</div>
-          <div class="score-label">composite wellbeing index</div>
-          <div class="score-delta" id="scoreDelta"></div>
-          <div class="insight" id="insight"></div>
-        </div>
-      </div>
-
-      <!-- CENTER -->
-      <div class="col">
-        <div class="card">
-          <div class="card-label">Tasks <span id="scheduledTaskCount" style="color:var(--muted);font-size:0.7rem;"></span></div>
-          <div id="todayScheduledList" style="display:flex;flex-direction:column;gap:8px;">
-            <div style="font-size:0.78rem;color:var(--muted);">No tasks yet.</div>
+          <div style="display:flex;align-items:flex-end;gap:20px;">
+            <div>
+              <div class="big-score" id="lifeScore">—</div>
+              <div class="score-label">composite wellbeing index</div>
+              <div class="score-delta" id="scoreDelta"></div>
+            </div>
+            <div class="insight" id="insight" style="flex:1;margin-bottom:4px;"></div>
           </div>
         </div>
-      </div>
-
-      <!-- RIGHT -->
-      <div class="col">
-        <div class="card">
-          <div class="card-label">Daily Checklist <span id="checklistCount" style="color:var(--muted);font-size:0.7rem;"></span></div>
-          <div id="checklistItems" style="display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
-
-        <div class="card fill">
+        <div class="card today-spark-card">
           <div class="card-label">7-Day Life Score</div>
-          <canvas id="sparkCanvas" height="70"></canvas>
+          <canvas id="sparkCanvas" height="80"></canvas>
           <div style="display:flex;justify-content:space-between;margin-top:6px">
             <span style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--muted)" id="sparkStart">—</span>
             <span style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--muted)">TODAY</span>
           </div>
         </div>
       </div>
+
+      <!-- BOTTOM ROW: Tasks + Checklist -->
+      <div class="today-bottom">
+        <div class="card today-tasks-card">
+          <div class="card-label">
+            Tasks <span id="scheduledTaskCount" style="color:var(--muted);font-size:0.7rem;"></span>
+            <button onclick="switchTab('tasks')" style="background:rgba(200,240,96,0.1);border:1px solid rgba(200,240,96,0.25);color:var(--accent);border-radius:6px;padding:2px 10px;font-size:0.75rem;cursor:pointer;font-family:'DM Mono',monospace;">+ Add</button>
+          </div>
+          <div id="todayScheduledList" style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-size:0.78rem;color:var(--muted);">No tasks yet.</div>
+          </div>
+        </div>
+        <div class="card today-checklist-card">
+          <div class="card-label">Daily Checklist <span id="checklistCount" style="color:var(--muted);font-size:0.7rem;"></span></div>
+          <div id="checklistItems" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+
     </div>
   </div><!-- /today -->
 
@@ -1307,12 +1321,6 @@ function renderHistory() {
   }
 
   days.forEach(({key, date, data}) => {
-    const doneT = (data.tasks||[]).filter(t=>t.done).length;
-    const totalT = (data.tasks||[]).length;
-    const todayHabitIdx = (date.getDay()+6)%7;
-    const doneH = (data.habits||[]).filter(h=>h.done&&h.done[todayHabitIdx]).length;
-    const totalH = (data.habits||[]).length;
-    const mood = data.mood !== null && data.mood !== undefined ? moods[data.mood] : '—';
     const score = data.score || '—';
     const dayLabel = date.toLocaleDateString('en-GB',{weekday:'long',month:'short'});
 
@@ -1323,26 +1331,6 @@ function renderHistory() {
       <div class="day-date-block">
         <div class="day-date-big">${date.getDate()}</div>
         <div class="day-date-label">${dayLabel}</div>
-      </div>
-      <div class="day-summary">
-        <div class="day-summary-row">
-          <div class="day-stat">
-            <div class="day-stat-val" style="color:var(--accent2)">${doneT}/${totalT}</div>
-            <div class="day-stat-label">Tasks</div>
-          </div>
-          <div class="day-stat">
-            <div class="day-stat-val" style="color:var(--accent3)">${doneH}/${totalH}</div>
-            <div class="day-stat-label">Habits</div>
-          </div>
-          <div class="day-stat">
-            <div class="day-stat-val">${mood}</div>
-            <div class="day-stat-label">Mood</div>
-          </div>
-          <div class="day-stat">
-            <div class="day-stat-val" style="color:var(--accent4)">${data.timerSessions||0}</div>
-            <div class="day-stat-label">Sessions</div>
-          </div>
-        </div>
       </div>
       <div class="day-score-badge">${score}</div>
     </div>
