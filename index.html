@@ -502,6 +502,13 @@
     /* History */
     .history-container { padding: 16px; }
     .history-title { font-size: 1.8rem; }
+    .today-top, .today-bottom { grid-template-columns: 1fr; }
+    .today-score-card { order: 1; }
+    .today-tasks-card { order: 2; }
+    .today-checklist-card { order: 3; }
+    .today-spark-card { order: 4; }
+    .today-top { display: flex; flex-direction: column; }
+    .today-bottom { display: flex; flex-direction: column; }
     .day-summary-row { gap: 12px; }
     .day-stat-val { font-size: 1.2rem; }
     .day-score-badge { font-size: 1.5rem; }
@@ -533,6 +540,9 @@
       </button>
       <button class="sidebar-btn" onclick="switchSidebarView('timer'); closeSidebar();">
         <span class="sb-icon">⏱</span> Focus Timer
+      </button>
+      <button class="sidebar-btn" onclick="switchSidebarView('worldmap'); closeSidebar();">
+        <span class="sb-icon">🌍</span> World Map
       </button>
     </div>
   </div>
@@ -714,6 +724,87 @@
           <button class="btn" onclick="resetTimer()">Reset</button>
         </div>
         <div class="timer-sessions" id="timerSessions">0 sessions today</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORLD MAP SIDEBAR VIEW -->
+  <div class="sidebar-view" id="sview-worldmap">
+    <div style="height:calc(100vh - 120px);display:flex;flex-direction:column;background:var(--bg);position:relative;">
+
+      <!-- Map header -->
+      <div style="padding:20px 24px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;letter-spacing:-0.02em;">World Map</div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:2px;" id="mapSubtitle">Click a region to zoom · <span id="visitedCount">0</span> countries visited</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="addCountryBtn" onclick="toggleAddMode()" style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(200,240,96,0.08);color:var(--accent);cursor:pointer;transition:all 0.2s;">+ Mark Visited</button>
+          <button onclick="resetMapView()" style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;">Reset View</button>
+        </div>
+      </div>
+
+      <!-- Add mode banner -->
+      <div id="addModeBanner" style="display:none;padding:10px 24px;background:rgba(200,240,96,0.08);border-bottom:1px solid rgba(200,240,96,0.2);font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--accent);letter-spacing:0.08em;">
+        ✦ ADD MODE — Click any country to mark it as visited
+      </div>
+
+      <!-- Map container -->
+      <div style="flex:1;position:relative;overflow:hidden;" id="mapContainer">
+        <svg id="worldSvg" style="width:100%;height:100%;cursor:grab;" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="countryGlow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <!-- Scanline effect -->
+            <pattern id="scanlines" x="0" y="0" width="1000" height="4" patternUnits="userSpaceOnUse">
+              <rect width="1000" height="1" fill="rgba(0,0,0,0.15)" y="0"/>
+            </pattern>
+          </defs>
+
+          <!-- Ocean background -->
+          <rect width="1000" height="500" fill="#050a12"/>
+          <!-- Grid lines -->
+          <g stroke="rgba(96,208,240,0.06)" stroke-width="0.5">
+            <line x1="0" y1="83" x2="1000" y2="83"/>
+            <line x1="0" y1="166" x2="1000" y2="166"/>
+            <line x1="0" y1="250" x2="1000" y2="250"/>
+            <line x1="0" y1="333" x2="1000" y2="333"/>
+            <line x1="0" y1="416" x2="1000" y2="416"/>
+            <line x1="166" y1="0" x2="166" y2="500"/>
+            <line x1="333" y1="0" x2="333" y2="500"/>
+            <line x1="500" y1="0" x2="500" y2="500"/>
+            <line x1="666" y1="0" x2="666" y2="500"/>
+            <line x1="833" y1="0" x2="833" y2="500"/>
+          </g>
+          <!-- Equator -->
+          <line x1="0" y1="250" x2="1000" y2="250" stroke="rgba(96,208,240,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+
+          <!-- Countries group - will be populated by JS -->
+          <g id="countriesGroup"></g>
+
+          <!-- Scanline overlay -->
+          <rect width="1000" height="500" fill="url(#scanlines)" opacity="0.4" pointer-events="none"/>
+        </svg>
+
+        <!-- Tooltip -->
+        <div id="mapTooltip" style="display:none;position:absolute;background:rgba(10,10,20,0.95);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:'DM Mono',monospace;font-size:0.72rem;pointer-events:none;z-index:10;white-space:nowrap;">
+          <span id="tooltipName" style="color:var(--text);"></span>
+          <span id="tooltipStatus" style="margin-left:8px;"></span>
+        </div>
+      </div>
+
+      <!-- Visited countries list -->
+      <div style="padding:12px 24px;border-top:1px solid var(--border);flex-shrink:0;max-height:120px;overflow-y:auto;">
+        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Visited Countries</div>
+        <div id="visitedList" style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="color:var(--muted);font-size:0.78rem;">None yet — mark your first country!</span>
+        </div>
       </div>
     </div>
   </div>
@@ -1730,6 +1821,288 @@ window.save = function() {
 };
 
 window.addEventListener('load', initSupabase);
+
+// ═══════════════════════════════════════
+// WORLD MAP
+// ═══════════════════════════════════════
+let visitedCountries = loadGlobal('visitedCountries', []);
+let mapAddMode = false;
+let mapTransform = { x: 0, y: 0, scale: 1 };
+let mapDragging = false, mapDragStart = null;
+
+// Simplified country paths (Natural Earth projection, 1000x500 viewBox)
+const COUNTRIES = [
+  // North America
+  {id:'CA',name:'Canada',path:'M 70,60 L 280,60 L 290,80 L 270,100 L 250,90 L 230,110 L 200,100 L 180,120 L 150,110 L 120,130 L 90,120 L 70,90 Z'},
+  {id:'US',name:'United States',path:'M 80,130 L 260,130 L 270,110 L 250,90 L 240,120 L 220,115 L 200,125 L 180,120 L 150,130 L 120,125 L 100,140 L 80,155 Z M 50,155 L 80,155 L 80,130 L 70,90 L 50,100 L 40,130 Z M 30,200 L 55,190 L 55,175 L 35,175 Z'},
+  {id:'MX',name:'Mexico',path:'M 80,155 L 180,155 L 195,175 L 185,195 L 165,200 L 150,215 L 130,210 L 115,195 L 100,185 L 80,180 Z'},
+  {id:'GL',name:'Greenland',path:'M 310,20 L 370,20 L 380,40 L 360,55 L 330,55 L 310,40 Z'},
+  // Central America & Caribbean
+  {id:'GT',name:'Guatemala',path:'M 130,215 L 145,215 L 145,230 L 130,230 Z'},
+  {id:'CU',name:'Cuba',path:'M 175,195 L 205,193 L 205,202 L 175,204 Z'},
+  // South America
+  {id:'CO',name:'Colombia',path:'M 145,230 L 185,230 L 190,255 L 165,260 L 145,255 Z'},
+  {id:'VE',name:'Venezuela',path:'M 185,230 L 215,228 L 218,248 L 190,255 Z'},
+  {id:'BR',name:'Brazil',path:'M 165,260 L 250,248 L 265,280 L 260,320 L 230,340 L 195,335 L 175,310 L 165,285 Z'},
+  {id:'PE',name:'Peru',path:'M 140,260 L 165,260 L 165,300 L 145,305 L 130,285 Z'},
+  {id:'AR',name:'Argentina',path:'M 175,335 L 205,335 L 210,380 L 195,405 L 180,395 L 175,365 Z'},
+  {id:'CL',name:'Chile',path:'M 155,305 L 175,305 L 175,390 L 160,395 L 150,365 L 150,330 Z'},
+  {id:'BO',name:'Bolivia',path:'M 165,295 L 195,292 L 200,320 L 175,325 L 162,315 Z'},
+  {id:'PY',name:'Paraguay',path:'M 195,320 L 215,318 L 215,338 L 195,340 Z'},
+  {id:'UY',name:'Uruguay',path:'M 205,340 L 225,338 L 228,352 L 208,355 Z'},
+  // Europe
+  {id:'NO',name:'Norway',path:'M 470,40 L 495,35 L 500,55 L 490,70 L 472,65 Z'},
+  {id:'SE',name:'Sweden',path:'M 490,40 L 505,35 L 508,65 L 495,70 L 490,55 Z'},
+  {id:'FI',name:'Finland',path:'M 505,30 L 525,28 L 528,60 L 510,65 L 506,50 Z'},
+  {id:'DK',name:'Denmark',path:'M 476,72 L 488,70 L 488,82 L 476,82 Z'},
+  {id:'GB',name:'United Kingdom',path:'M 450,72 L 468,70 L 470,90 L 455,92 Z'},
+  {id:'IE',name:'Ireland',path:'M 440,76 L 452,74 L 452,88 L 440,88 Z'},
+  {id:'PT',name:'Portugal',path:'M 442,112 L 450,112 L 450,130 L 442,130 Z'},
+  {id:'ES',name:'Spain',path:'M 448,102 L 480,100 L 482,118 L 450,120 L 446,115 Z'},
+  {id:'FR',name:'France',path:'M 455,88 L 485,88 L 488,110 L 460,112 L 454,102 Z'},
+  {id:'BE',name:'Belgium',path:'M 468,86 L 480,86 L 480,94 L 468,94 Z'},
+  {id:'NL',name:'Netherlands',path:'M 472,78 L 482,78 L 482,88 L 472,88 Z'},
+  {id:'DE',name:'Germany',path:'M 480,80 L 508,80 L 510,105 L 484,108 L 480,95 Z'},
+  {id:'CH',name:'Switzerland',path:'M 472,106 L 488,106 L 488,115 L 472,115 Z'},
+  {id:'AT',name:'Austria',path:'M 488,100 L 510,100 L 510,110 L 488,110 Z'},
+  {id:'IT',name:'Italy',path:'M 468,110 L 490,108 L 495,135 L 482,145 L 470,130 L 466,118 Z'},
+  {id:'PL',name:'Poland',path:'M 505,78 L 530,78 L 532,98 L 508,100 Z'},
+  {id:'CZ',name:'Czechia',path:'M 498,95 L 515,95 L 515,104 L 498,104 Z'},
+  {id:'SK',name:'Slovakia',path:'M 510,100 L 528,100 L 528,108 L 510,108 Z'},
+  {id:'HU',name:'Hungary',path:'M 505,105 L 525,105 L 526,115 L 505,116 Z'},
+  {id:'RO',name:'Romania',path:'M 520,100 L 545,100 L 548,118 L 522,120 Z'},
+  {id:'UA',name:'Ukraine',path:'M 520,80 L 562,78 L 565,100 L 522,102 Z'},
+  {id:'BY',name:'Belarus',path:'M 518,68 L 542,66 L 544,80 L 519,82 Z'},
+  {id:'EE',name:'Estonia',path:'M 516,56 L 530,56 L 530,64 L 516,64 Z'},
+  {id:'LV',name:'Latvia',path:'M 514,62 L 528,62 L 528,70 L 514,70 Z'},
+  {id:'LT',name:'Lithuania',path:'M 508,68 L 522,66 L 522,76 L 508,76 Z'},
+  {id:'GR',name:'Greece',path:'M 510,118 L 530,118 L 532,135 L 515,138 Z'},
+  {id:'BG',name:'Bulgaria',path:'M 522,112 L 542,112 L 543,124 L 522,126 Z'},
+  {id:'RS',name:'Serbia',path:'M 506,108 L 520,108 L 520,120 L 506,120 Z'},
+  {id:'HR',name:'Croatia',path:'M 490,108 L 506,108 L 507,118 L 492,120 Z'},
+  // Russia
+  {id:'RU',name:'Russia',path:'M 530,28 L 840,28 L 845,100 L 820,120 L 790,110 L 760,90 L 720,95 L 680,90 L 650,75 L 610,70 L 580,80 L 550,72 L 528,65 Z'},
+  // Middle East
+  {id:'TR',name:'Turkey',path:'M 538,120 L 585,115 L 590,132 L 540,138 Z'},
+  {id:'SY',name:'Syria',path:'M 570,132 L 590,130 L 593,145 L 572,147 Z'},
+  {id:'IQ',name:'Iraq',path:'M 575,140 L 600,138 L 604,162 L 577,165 Z'},
+  {id:'IR',name:'Iran',path:'M 595,128 L 640,125 L 645,158 L 600,162 Z'},
+  {id:'SA',name:'Saudi Arabia',path:'M 568,155 L 620,150 L 625,190 L 590,200 L 565,185 Z'},
+  {id:'AE',name:'UAE',path:'M 618,175 L 635,172 L 636,185 L 618,187 Z'},
+  {id:'YE',name:'Yemen',path:'M 575,195 L 620,190 L 622,210 L 578,215 Z'},
+  {id:'OM',name:'Oman',path:'M 622,168 L 642,162 L 648,190 L 628,195 Z'},
+  {id:'IL',name:'Israel',path:'M 553,148 L 562,148 L 562,162 L 553,162 Z'},
+  {id:'JO',name:'Jordan',path:'M 560,148 L 572,148 L 573,165 L 560,166 Z'},
+  {id:'KW',name:'Kuwait',path:'M 600,155 L 610,155 L 610,163 L 600,163 Z'},
+  // Africa
+  {id:'MA',name:'Morocco',path:'M 440,145 L 470,142 L 472,168 L 444,172 Z'},
+  {id:'DZ',name:'Algeria',path:'M 455,142 L 510,138 L 514,178 L 458,185 Z'},
+  {id:'LY',name:'Libya',path:'M 505,140 L 545,138 L 548,175 L 507,178 Z'},
+  {id:'EG',name:'Egypt',path:'M 540,140 L 570,138 L 573,165 L 542,168 Z'},
+  {id:'SD',name:'Sudan',path:'M 538,162 L 582,158 L 585,200 L 540,205 Z'},
+  {id:'ET',name:'Ethiopia',path:'M 558,198 L 600,195 L 605,225 L 560,230 Z'},
+  {id:'MR',name:'Mauritania',path:'M 428,158 L 460,155 L 462,192 L 430,195 Z'},
+  {id:'ML',name:'Mali',path:'M 448,175 L 490,172 L 492,218 L 450,222 Z'},
+  {id:'NE',name:'Niger',path:'M 480,172 L 520,170 L 522,208 L 482,212 Z'},
+  {id:'NG',name:'Nigeria',path:'M 478,210 L 520,208 L 522,245 L 480,248 Z'},
+  {id:'CM',name:'Cameroon',path:'M 498,235 L 518,233 L 520,258 L 500,260 Z'},
+  {id:'CD',name:'DR Congo',path:'M 505,248 L 550,244 L 555,292 L 508,296 Z'},
+  {id:'KE',name:'Kenya',path:'M 565,238 L 595,235 L 598,268 L 567,272 Z'},
+  {id:'TZ',name:'Tanzania',path:'M 548,268 L 588,265 L 590,298 L 550,300 Z'},
+  {id:'AO',name:'Angola',path:'M 500,290 L 535,288 L 537,325 L 502,328 Z'},
+  {id:'ZA',name:'South Africa',path:'M 498,328 L 555,325 L 558,368 L 525,378 L 500,362 Z'},
+  {id:'MZ',name:'Mozambique',path:'M 548,295 L 568,292 L 570,338 L 550,342 Z'},
+  {id:'ZM',name:'Zambia',path:'M 525,285 L 558,282 L 560,310 L 527,313 Z'},
+  {id:'GH',name:'Ghana',path:'M 460,220 L 478,218 L 480,245 L 462,248 Z'},
+  {id:'SN',name:'Senegal',path:'M 420,192 L 445,190 L 447,208 L 422,210 Z'},
+  {id:'CI',name:'Ivory Coast',path:'M 445,218 L 465,216 L 467,240 L 447,242 Z'},
+  {id:'SO',name:'Somalia',path:'M 580,210 L 610,205 L 615,248 L 582,255 Z'},
+  {id:'MG',name:'Madagascar',path:'M 595,290 L 610,285 L 615,335 L 598,340 Z'},
+  {id:'TN',name:'Tunisia',path:'M 488,132 L 502,130 L 503,150 L 489,152 Z'},
+  // Central Asia
+  {id:'KZ',name:'Kazakhstan',path:'M 610,80 L 700,75 L 705,118 L 650,125 L 612,118 Z'},
+  {id:'UZ',name:'Uzbekistan',path:'M 638,118 L 678,115 L 680,132 L 640,135 Z'},
+  {id:'TM',name:'Turkmenistan',path:'M 618,128 L 655,125 L 658,145 L 620,148 Z'},
+  {id:'AF',name:'Afghanistan',path:'M 648,135 L 690,132 L 692,160 L 650,163 Z'},
+  {id:'PK',name:'Pakistan',path:'M 672,148 L 718,145 L 720,178 L 675,182 Z'},
+  // South Asia
+  {id:'IN',name:'India',path:'M 680,158 L 730,155 L 738,210 L 705,230 L 680,215 L 675,185 Z'},
+  {id:'BD',name:'Bangladesh',path:'M 730,170 L 748,168 L 750,185 L 732,187 Z'},
+  {id:'LK',name:'Sri Lanka',path:'M 710,230 L 722,228 L 724,245 L 712,247 Z'},
+  {id:'NP',name:'Nepal',path:'M 710,152 L 735,150 L 736,162 L 712,164 Z'},
+  // East Asia
+  {id:'CN',name:'China',path:'M 720,100 L 820,95 L 828,155 L 800,165 L 760,160 L 730,155 L 718,128 Z'},
+  {id:'MN',name:'Mongolia',path:'M 718,80 L 820,75 L 822,100 L 720,105 Z'},
+  {id:'KR',name:'South Korea',path:'M 820,128 L 838,126 L 840,145 L 822,147 Z'},
+  {id:'KP',name:'North Korea',path:'M 815,112 L 838,110 L 840,130 L 817,132 Z'},
+  {id:'JP',name:'Japan',path:'M 840,108 L 865,105 L 868,140 L 845,145 Z'},
+  {id:'TW',name:'Taiwan',path:'M 832,158 L 842,156 L 843,168 L 833,170 Z'},
+  // Southeast Asia
+  {id:'TH',name:'Thailand',path:'M 750,185 L 775,182 L 778,215 L 752,218 Z'},
+  {id:'VN',name:'Vietnam',path:'M 772,175 L 795,172 L 798,215 L 774,220 Z'},
+  {id:'MM',name:'Myanmar',path:'M 738,162 L 762,158 L 765,192 L 740,196 Z'},
+  {id:'PH',name:'Philippines',path:'M 820,185 L 848,180 L 852,220 L 823,225 Z'},
+  {id:'ID',name:'Indonesia',path:'M 755,238 L 870,232 L 875,258 L 758,262 Z'},
+  {id:'MY',name:'Malaysia',path:'M 762,218 L 800,215 L 802,232 L 764,235 Z'},
+  {id:'SG',name:'Singapore',path:'M 782,234 L 790,234 L 790,240 L 782,240 Z'},
+  // Oceania
+  {id:'AU',name:'Australia',path:'M 790,290 L 900,285 L 910,360 L 870,378 L 820,375 L 790,345 Z'},
+  {id:'NZ',name:'New Zealand',path:'M 920,358 L 940,352 L 942,380 L 922,385 Z'},
+  {id:'PG',name:'Papua New Guinea',path:'M 868,252 L 908,248 L 910,272 L 870,276 Z'},
+];
+
+const CONTINENTS = [
+  { name:'North America', viewBox:'0 0 330 300', label:'N. America' },
+  { name:'South America', viewBox:'120 230 200 200', label:'S. America' },
+  { name:'Europe', viewBox:'420 30 180 140', label:'Europe' },
+  { name:'Africa', viewBox:'400 130 260 260', label:'Africa' },
+  { name:'Asia', viewBox:'530 60 380 220', label:'Asia' },
+  { name:'Oceania', viewBox:'740 240 220 180', label:'Oceania' },
+];
+
+function initWorldMap() {
+  const group = document.getElementById('countriesGroup');
+  if (!group) return;
+  group.innerHTML = '';
+
+  COUNTRIES.forEach(country => {
+    const isVisited = visitedCountries.includes(country.id);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', country.path);
+    path.setAttribute('id', 'country-' + country.id);
+    path.setAttribute('fill', isVisited ? 'rgba(200,240,96,0.18)' : 'rgba(16,28,45,0.9)');
+    path.setAttribute('stroke', isVisited ? '#c8f060' : '#f06060');
+    path.setAttribute('stroke-width', isVisited ? '1.5' : '0.8');
+    path.style.cursor = 'pointer';
+    path.style.transition = 'fill 0.3s, stroke 0.3s';
+    if (isVisited) path.setAttribute('filter', 'url(#countryGlow)');
+
+    path.addEventListener('mouseenter', (e) => {
+      showMapTooltip(e, country.name, isVisited);
+      if (!visitedCountries.includes(country.id)) {
+        path.setAttribute('fill', 'rgba(240,96,96,0.2)');
+      }
+    });
+    path.addEventListener('mousemove', (e) => showMapTooltip(e, country.name, visitedCountries.includes(country.id)));
+    path.addEventListener('mouseleave', () => {
+      hideMapTooltip();
+      if (!visitedCountries.includes(country.id)) {
+        path.setAttribute('fill', 'rgba(16,28,45,0.9)');
+      }
+    });
+    path.addEventListener('click', () => {
+      if (mapAddMode) {
+        toggleVisited(country.id, country.name);
+      }
+    });
+    group.appendChild(path);
+  });
+
+  renderVisitedList();
+  updateVisitedCount();
+}
+
+function showMapTooltip(e, name, visited) {
+  const tip = document.getElementById('mapTooltip');
+  const container = document.getElementById('mapContainer');
+  if (!tip || !container) return;
+  const rect = container.getBoundingClientRect();
+  tip.style.display = 'block';
+  tip.style.left = (e.clientX - rect.left + 14) + 'px';
+  tip.style.top = (e.clientY - rect.top - 36) + 'px';
+  document.getElementById('tooltipName').textContent = name;
+  const status = document.getElementById('tooltipStatus');
+  status.textContent = visited ? '✓ Visited' : '';
+  status.style.color = visited ? 'var(--accent)' : 'var(--muted)';
+}
+
+function hideMapTooltip() {
+  const tip = document.getElementById('mapTooltip');
+  if (tip) tip.style.display = 'none';
+}
+
+function toggleVisited(id, name) {
+  const idx = visitedCountries.indexOf(id);
+  if (idx === -1) {
+    visitedCountries.push(id);
+  } else {
+    visitedCountries.splice(idx, 1);
+  }
+  saveGlobal('visitedCountries', visitedCountries);
+  // Update path appearance
+  const path = document.getElementById('country-' + id);
+  if (path) {
+    const isNowVisited = visitedCountries.includes(id);
+    path.setAttribute('fill', isNowVisited ? 'rgba(200,240,96,0.18)' : 'rgba(16,28,45,0.9)');
+    path.setAttribute('stroke', isNowVisited ? '#c8f060' : '#f06060');
+    path.setAttribute('stroke-width', isNowVisited ? '1.5' : '0.8');
+    if (isNowVisited) path.setAttribute('filter','url(#countryGlow)');
+    else path.removeAttribute('filter');
+  }
+  renderVisitedList();
+  updateVisitedCount();
+}
+
+function toggleAddMode() {
+  mapAddMode = !mapAddMode;
+  const btn = document.getElementById('addCountryBtn');
+  const banner = document.getElementById('addModeBanner');
+  if (btn) {
+    btn.textContent = mapAddMode ? '✕ Done' : '+ Mark Visited';
+    btn.style.background = mapAddMode ? 'rgba(200,240,96,0.2)' : 'rgba(200,240,96,0.08)';
+  }
+  if (banner) banner.style.display = mapAddMode ? 'block' : 'none';
+}
+
+function resetMapView() {
+  const svg = document.getElementById('worldSvg');
+  if (svg) {
+    mapTransform = { x:0, y:0, scale:1 };
+    svg.setAttribute('viewBox', '0 0 1000 500');
+  }
+}
+
+function renderVisitedList() {
+  const list = document.getElementById('visitedList');
+  if (!list) return;
+  if (visitedCountries.length === 0) {
+    list.innerHTML = '<span style="color:var(--muted);font-size:0.78rem;">None yet — mark your first country!</span>';
+    return;
+  }
+  list.innerHTML = '';
+  visitedCountries.forEach(id => {
+    const country = COUNTRIES.find(c => c.id === id);
+    if (!country) return;
+    const chip = document.createElement('div');
+    chip.style.cssText = 'display:flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(200,240,96,0.1);border:1px solid rgba(200,240,96,0.25);border-radius:20px;font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--accent);cursor:pointer;';
+    chip.textContent = country.name;
+    chip.title = 'Click to remove';
+    chip.onclick = () => toggleVisited(id, country.name);
+    list.appendChild(chip);
+  });
+}
+
+function updateVisitedCount() {
+  const el = document.getElementById('visitedCount');
+  if (el) el.textContent = visitedCountries.length;
+}
+
+// Zoom on click (continent zoom via viewBox animation)
+let currentViewBox = '0 0 1000 500';
+function zoomToRegion(viewBox) {
+  const svg = document.getElementById('worldSvg');
+  if (!svg) return;
+  currentViewBox = viewBox;
+  svg.setAttribute('viewBox', viewBox);
+}
+
+// Init map when switching to it
+const _origSwitchSidebarView = switchSidebarView;
+window.switchSidebarView = function(name) {
+  _origSwitchSidebarView(name);
+  if (name === 'worldmap') setTimeout(initWorldMap, 50);
+};
+
 </script>
 </body>
 </html>
