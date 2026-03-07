@@ -61,7 +61,59 @@
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
   .nav-time { font-family:'DM Mono',monospace; font-size:0.82rem; color:var(--accent); letter-spacing:0.05em; }
 
-  /* ── TABS ── */
+  /* ── SIDEBAR ── */
+  .sidebar-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
+    z-index:400; backdrop-filter:blur(4px);
+  }
+  .sidebar-overlay.open { display:block; }
+  .sidebar {
+    position:fixed; top:0; left:0; height:100vh; width:260px;
+    background:var(--surface); border-right:1px solid var(--border2);
+    z-index:500; transform:translateX(-100%);
+    transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    display:flex; flex-direction:column; padding:0;
+    overflow-y:auto;
+  }
+  .sidebar.open { transform:translateX(0); }
+  .sidebar-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 20px 16px;
+    border-bottom:1px solid var(--border);
+  }
+  .sidebar-logo { font-family:'DM Serif Display',serif; font-size:1.1rem; display:flex; align-items:center; gap:8px; }
+  .sidebar-close {
+    width:30px; height:30px; border-radius:8px; border:1px solid var(--border);
+    background:transparent; color:var(--muted); cursor:pointer; font-size:1rem;
+    display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+  }
+  .sidebar-close:hover { color:var(--text); background:var(--surface2); }
+  .sidebar-section { padding:16px 12px 8px; }
+  .sidebar-section-label {
+    font-family:'DM Mono',monospace; font-size:0.58rem; letter-spacing:0.18em;
+    text-transform:uppercase; color:var(--muted); padding:0 8px; margin-bottom:6px;
+  }
+  .sidebar-btn {
+    width:100%; display:flex; align-items:center; gap:12px;
+    padding:11px 12px; border-radius:10px; border:none;
+    background:transparent; color:var(--text); cursor:pointer;
+    font-family:'Instrument Sans',sans-serif; font-size:0.88rem;
+    text-align:left; transition:all 0.2s;
+  }
+  .sidebar-btn:hover { background:var(--surface2); }
+  .sidebar-btn.active { background:rgba(200,240,96,0.08); color:var(--accent); }
+  .sidebar-btn .sb-icon { font-size:1.1rem; width:22px; text-align:center; flex-shrink:0; }
+  .sidebar-toggle {
+    width:34px; height:34px; border-radius:10px; border:1px solid var(--border);
+    background:transparent; color:var(--text); cursor:pointer; font-size:1.1rem;
+    display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+    flex-shrink:0;
+  }
+  .sidebar-toggle:hover { background:var(--surface2); border-color:var(--border2); }
+
+  /* ── SIDEBAR VIEWS ── */
+  .sidebar-view { display:none; animation:fadeIn 0.3s ease; }
+  .sidebar-view.active { display:block; }
   .tabs {
     display:flex; gap:2px;
     padding:10px 24px;
@@ -449,9 +501,35 @@
 <body class="mood-colors">
 <div class="app">
 
+  <!-- SIDEBAR OVERLAY -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><div class="logo-dot"></div>LIFE OS</div>
+      <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+    </div>
+
+    <div class="sidebar-section">
+      <button class="sidebar-btn" onclick="switchTab('today'); closeSidebar();">
+        <span class="sb-icon">🏠</span> Main
+      </button>
+      <button class="sidebar-btn" onclick="switchSidebarView('goals'); closeSidebar();">
+        <span class="sb-icon">🎯</span> Active Goals
+      </button>
+      <button class="sidebar-btn" onclick="switchSidebarView('timer'); closeSidebar();">
+        <span class="sb-icon">⏱</span> Focus Timer
+      </button>
+    </div>
+  </div>
+
   <!-- NAV -->
   <nav>
-    <div class="nav-logo"><div class="logo-dot"></div>LIFE OS</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="sidebar-toggle" onclick="openSidebar()">☰</button>
+      <div class="nav-logo"><div class="logo-dot"></div>LIFE OS</div>
+    </div>
     <div class="nav-time" id="navTime">—</div>
   </nav>
 
@@ -481,11 +559,6 @@
           <div class="score-delta" id="scoreDelta"></div>
           <div class="insight" id="insight"></div>
         </div>
-
-        <div class="card fill">
-          <div class="card-label">Active Goals</div>
-          <div id="goalList"></div>
-        </div>
       </div>
 
       <!-- CENTER -->
@@ -495,32 +568,6 @@
           <div id="todayScheduledList" style="display:flex;flex-direction:column;gap:8px;">
             <div style="font-size:0.78rem;color:var(--muted);">No tasks yet.</div>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="card-label">Focus Timer</div>
-          <div class="session-type" id="sessionType">
-            <div class="session-tag active" onclick="setSession(25,this)">Focus 25</div>
-            <div class="session-tag" onclick="setSession(5,this)">Break 5</div>
-            <div class="session-tag" onclick="setSession(10,this)">Break 10</div>
-            <div class="session-tag" onclick="setSession(90,this)">Deep 90</div>
-          </div>
-          <div class="timer-arc-wrap">
-            <svg width="110" height="110" viewBox="0 0 110 110" overflow="visible">
-              <circle cx="55" cy="55" r="48" fill="none" stroke="var(--surface2)" stroke-width="4"/>
-              <circle id="arcCircle" cx="55" cy="55" r="48" fill="none" stroke="var(--accent2)"
-                stroke-width="4" stroke-linecap="round"
-                stroke-dasharray="301.6" stroke-dashoffset="0"
-                transform="rotate(-90 55 55)"
-                style="transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 8px rgba(96,208,240,0.5))"/>
-            </svg>
-          </div>
-          <div class="timer-display" id="timerDisplay">25:00</div>
-          <div class="timer-controls">
-            <button class="btn primary" id="timerBtn" onclick="toggleTimer()">Start</button>
-            <button class="btn" onclick="resetTimer()">Reset</button>
-          </div>
-          <div class="timer-sessions" id="timerSessions">0 sessions today</div>
         </div>
       </div>
 
@@ -608,6 +655,55 @@
     </div>
   </div>
 
+  <!-- GOALS SIDEBAR VIEW -->
+  <div class="sidebar-view" id="sview-goals">
+    <div class="history-container">
+      <div class="history-header">
+        <div>
+          <div class="history-title">Active Goals</div>
+          <div class="history-subtitle">Track your long-term progress</div>
+        </div>
+      </div>
+      <div id="goalListFull" style="display:flex;flex-direction:column;gap:14px;"></div>
+    </div>
+  </div>
+
+  <!-- TIMER SIDEBAR VIEW -->
+  <div class="sidebar-view" id="sview-timer">
+    <div class="history-container">
+      <div class="history-header">
+        <div>
+          <div class="history-title">Focus Timer</div>
+          <div class="history-subtitle">Deep work sessions</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px 0;">
+        <div class="session-type" id="sessionType">
+          <div class="session-tag active" onclick="setSession(25,this)">Focus 25</div>
+          <div class="session-tag" onclick="setSession(5,this)">Break 5</div>
+          <div class="session-tag" onclick="setSession(10,this)">Break 10</div>
+          <div class="session-tag" onclick="setSession(90,this)">Deep 90</div>
+        </div>
+        <div class="timer-arc-wrap">
+          <svg width="160" height="160" viewBox="0 0 110 110" overflow="visible">
+            <circle cx="55" cy="55" r="48" fill="none" stroke="var(--surface2)" stroke-width="4"/>
+            <circle id="arcCircle" cx="55" cy="55" r="48" fill="none" stroke="var(--accent2)"
+              stroke-width="4" stroke-linecap="round"
+              stroke-dasharray="301.6" stroke-dashoffset="0"
+              transform="rotate(-90 55 55)"
+              style="transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 8px rgba(96,208,240,0.5))"/>
+          </svg>
+        </div>
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="timer-controls">
+          <button class="btn primary" id="timerBtn" onclick="toggleTimer()">Start</button>
+          <button class="btn" onclick="resetTimer()">Reset</button>
+        </div>
+        <div class="timer-sessions" id="timerSessions">0 sessions today</div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /app -->
 
 <script>
@@ -640,14 +736,8 @@ const TODAY = TODAY_KEY();
 // Load or init today's data
 let dayData = loadDay(TODAY) || {
   tasks: [],
-  metrics: { water:0, steps:0, deepWork:0, screenFree:0 },
-  habits: [
-    {name:'💧 Hydrate', done:[0,0,0,0,0,0,0]},
-    {name:'🏋️ Exercise', done:[0,0,0,0,0,0,0]},
-    {name:'📖 Read', done:[0,0,0,0,0,0,0]},
-    {name:'🧘 Meditate', done:[0,0,0,0,0,0,0]},
-    {name:'🌙 Sleep 8h', done:[0,0,0,0,0,0,0]},
-  ],
+  metrics: {},
+  habits: [],
   mood: null,
   moodHistory: [],
   timerSessions: 0,
@@ -718,10 +808,34 @@ setInterval(updateClock, 1000); updateClock();
 function switchTab(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  el.classList.add('active');
+  document.querySelectorAll('.sidebar-view').forEach(v => v.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else {
+    document.querySelectorAll('.tab').forEach(t => {
+      if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + name + "'")) t.classList.add('active');
+    });
+  }
   document.getElementById('view-' + name).classList.add('active');
   if (name === 'history') renderHistory();
   if (name === 'tasks') renderScheduledTasks();
+}
+
+function switchSidebarView(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sidebar-view').forEach(v => v.classList.remove('active'));
+  document.getElementById('sview-' + name).classList.add('active');
+  if (name === 'goals') renderGoalsFull();
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
 }
 
 // ═══════════════════════════════════════
@@ -822,11 +936,16 @@ function renderInsight() {
 // GOALS
 // ═══════════════════════════════════════
 function renderGoals() {
-  const gl = document.getElementById('goalList');
+  // no-op, goals now live in sidebar view
+}
+
+function renderGoalsFull() {
+  const gl = document.getElementById('goalListFull');
+  if (!gl) return;
   gl.innerHTML = '';
   goalDefs.forEach(g => {
     gl.innerHTML += `
-    <div class="goal-card">
+    <div class="goal-card" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:18px 20px;">
       <div class="goal-header">
         <span class="goal-icon">${g.icon}</span>
         <span class="goal-title">${g.title}</span>
@@ -1228,17 +1347,9 @@ function renderHistory() {
       <div class="day-score-badge">${score}</div>
     </div>
     <div class="day-expand" id="expand_${key}">
-      <div class="day-section-label">Habits</div>
+      <div class="day-section-label">Daily Checklist</div>
       <div class="day-habits-row">
-        ${(data.habits||[]).map((h,hi)=>`<div class="day-habit-chip${h.done&&h.done[todayHabitIdx]?' done':''}"><span>${h.name}</span></div>`).join('')}
-      </div>
-      <div class="day-section-label">Metrics</div>
-      <div class="day-metrics-grid">
-        ${metricDefs.map(m=>`<div class="day-metric-item"><div class="day-metric-name">${m.name}</div><div class="day-metric-val" style="color:${m.color}">${(data.metrics&&data.metrics[m.key])||0} ${m.unit}</div></div>`).join('')}
-      </div>
-      <div class="day-section-label">Tasks</div>
-      <div class="day-tasks-list">
-        ${(data.tasks||[]).map(t=>`<div class="day-task-chip${t.done?' done':''}"><div class="chk">${t.done?'✓':''}</div><span>${t.text}</span></div>`).join('')}
+        ${(data.checklist||[]).map(c=>`<div class="day-habit-chip${c.done?' done':''}"><span>${c.label}</span></div>`).join('')}
       </div>
     </div>`;
     container.appendChild(card);
