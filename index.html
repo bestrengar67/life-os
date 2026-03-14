@@ -74,6 +74,7 @@
     transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
     display:flex; flex-direction:column; padding:0;
     overflow-y:auto;
+    justify-content:space-between;
   }
   .sidebar.open { transform:translateX(0); }
   .sidebar-header {
@@ -504,11 +505,12 @@
     .history-title { font-size: 1.8rem; }
     .today-top, .today-bottom { grid-template-columns: 1fr; }
     .today-score-card { order: 1; }
+    .today-spark-card { order: 5; }
     .today-tasks-card { order: 2; }
     .today-checklist-card { order: 3; }
-    .today-spark-card { order: 4; }
     .today-top { display: flex; flex-direction: column; }
     .today-bottom { display: flex; flex-direction: column; }
+    .today-layout { display: flex; flex-direction: column; }
     .day-summary-row { gap: 12px; }
     .day-stat-val { font-size: 1.2rem; }
     .day-score-badge { font-size: 1.5rem; }
@@ -526,23 +528,37 @@
 
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-logo"><div class="logo-dot"></div>LIFE OS</div>
-      <button class="sidebar-close" onclick="closeSidebar()">✕</button>
-    </div>
+    <div>
+      <div class="sidebar-header">
+        <div class="sidebar-logo"><div class="logo-dot"></div>LIFE OS</div>
+        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+      </div>
 
-    <div class="sidebar-section">
-      <button class="sidebar-btn" onclick="switchTab('today'); closeSidebar();">
-        <span class="sb-icon">🏠</span> Main
-      </button>
-      <button class="sidebar-btn" onclick="switchSidebarView('goals'); closeSidebar();">
-        <span class="sb-icon">🎯</span> Active Goals
-      </button>
-      <button class="sidebar-btn" onclick="switchSidebarView('timer'); closeSidebar();">
-        <span class="sb-icon">⏱</span> Focus Timer
-      </button>
-      <button class="sidebar-btn" onclick="switchSidebarView('worldmap'); closeSidebar();">
-        <span class="sb-icon">🌍</span> World Map
+      <div class="sidebar-section" style="flex:1;">
+        <div class="sidebar-section-label">Navigation</div>
+        <button class="sidebar-btn" onclick="switchTab('today'); closeSidebar();">
+          <span class="sb-icon">🏠</span> Today
+        </button>
+        <button class="sidebar-btn" onclick="switchTab('history'); closeSidebar();">
+          <span class="sb-icon">📅</span> History
+        </button>
+        <button class="sidebar-btn" onclick="switchSidebarView('goals'); closeSidebar();">
+          <span class="sb-icon">🎯</span> Active Goals
+        </button>
+        <button class="sidebar-btn" onclick="switchSidebarView('timer'); closeSidebar();">
+          <span class="sb-icon">⏱</span> Focus Timer
+        </button>
+        <button class="sidebar-btn" onclick="switchSidebarView('worldmap'); closeSidebar();">
+          <span class="sb-icon">🌍</span> World Map
+        </button>
+        <button class="sidebar-btn" onclick="switchSidebarView('gym'); closeSidebar();">
+          <span class="sb-icon">🏋️</span> Gym
+        </button>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding:12px;">
+      <button class="sidebar-btn" onclick="switchSidebarView('settings'); closeSidebar();">
+        <span class="sb-icon">⚙️</span> Settings
       </button>
     </div>
   </div>
@@ -551,16 +567,12 @@
   <nav>
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="sidebar-toggle" onclick="openSidebar()">☰</button>
-      <div class="nav-logo"><div class="logo-dot"></div>LIFE OS</div>
+      <div class="nav-logo" onclick="switchTab('today')" style="cursor:pointer;"><div class="logo-dot"></div>LIFE OS</div>
     </div>
     <div class="nav-time" id="navTime">—</div>
   </nav>
 
-  <!-- TABS -->
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('today',this)">Today</button>
-    <button class="tab" onclick="switchTab('history',this)">History</button>
-  </div>
+  <!-- TABS (removed - navigation via sidebar only) -->
 
   <!-- TODAY VIEW -->
   <div class="view active" id="view-today">
@@ -654,24 +666,6 @@
         <div>
           <div class="history-title">Past Days</div>
           <div class="history-subtitle">Tap any day to expand details</div>
-        </div>
-        <div id="syncStatusBadge" style="display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);">
-          <div id="syncDot" style="width:7px;height:7px;border-radius:50%;background:var(--surface3);"></div>
-          <span id="syncStatusText">Not configured</span>
-        </div>
-      </div>
-
-      <!-- Supabase Setup — always visible -->
-      <div style="background:rgba(96,208,240,0.06);border:1px solid rgba(96,208,240,0.2);border-radius:12px;padding:18px 20px;margin-bottom:24px;">
-        <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;">☁ Cloud Sync</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <input id="sbUrlInput" placeholder="Supabase Project URL  (https://xxxx.supabase.co)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(96,208,240,0.4)'" onblur="this.style.borderColor='var(--border)'">
-          <input id="sbKeyInput" placeholder="Supabase Anon Key  (eyJ…)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(96,208,240,0.4)'" onblur="this.style.borderColor='var(--border)'">
-          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
-            <button onclick="saveSupabaseConfig()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:none;background:var(--accent2);color:#0a0a0f;font-weight:600;cursor:pointer;">Save & Connect</button>
-            <button onclick="testSync()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">Test Connection</button>
-            <button onclick="debugSync()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:1px solid var(--accent4);background:transparent;color:var(--accent4);cursor:pointer;">Debug Sync</button>
-          </div>
         </div>
       </div>
 
@@ -768,7 +762,7 @@
           </defs>
 
           <!-- Ocean background -->
-          <rect width="1000" height="500" fill="#050a12"/>
+          <rect width="1000" height="500" fill="#071422"/>
           <!-- Grid lines -->
           <g stroke="rgba(96,208,240,0.06)" stroke-width="0.5">
             <line x1="0" y1="83" x2="1000" y2="83"/>
@@ -804,6 +798,51 @@
         <div style="font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Visited Countries</div>
         <div id="visitedList" style="display:flex;flex-wrap:wrap;gap:6px;">
           <span style="color:var(--muted);font-size:0.78rem;">None yet — mark your first country!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GYM SIDEBAR VIEW -->
+  <div class="sidebar-view" id="sview-gym">
+    <div class="history-container">
+      <div class="history-header">
+        <div>
+          <div class="history-title">Gym</div>
+          <div class="history-subtitle">Track your workouts</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;min-height:300px;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;opacity:0.5;">
+        Coming soon
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS SIDEBAR VIEW -->
+  <div class="sidebar-view" id="sview-settings">
+    <div class="history-container">
+      <div class="history-header">
+        <div>
+          <div class="history-title">Settings</div>
+          <div class="history-subtitle">Configure your Life OS</div>
+        </div>
+        <div id="syncStatusBadge" style="display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);">
+          <div id="syncDot" style="width:7px;height:7px;border-radius:50%;background:var(--surface3);"></div>
+          <span id="syncStatusText">Not configured</span>
+        </div>
+      </div>
+
+      <!-- Cloud Sync -->
+      <div style="background:rgba(96,208,240,0.06);border:1px solid rgba(96,208,240,0.2);border-radius:12px;padding:18px 20px;margin-bottom:24px;">
+        <div style="font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;">☁ Cloud Sync</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <input id="sbUrlInput" placeholder="Supabase Project URL  (https://xxxx.supabase.co)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(96,208,240,0.4)'" onblur="this.style.borderColor='var(--border)'">
+          <input id="sbKeyInput" placeholder="Supabase Anon Key  (eyJ…)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:0.75rem;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(96,208,240,0.4)'" onblur="this.style.borderColor='var(--border)'">
+          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+            <button onclick="saveSupabaseConfig()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:none;background:var(--accent2);color:#0a0a0f;font-weight:600;cursor:pointer;">Save & Connect</button>
+            <button onclick="testSync()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">Test Connection</button>
+            <button onclick="debugSync()" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:9px 18px;border-radius:8px;border:1px solid var(--accent4);background:transparent;color:var(--accent4);cursor:pointer;">Debug Sync</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1830,134 +1869,170 @@ let mapAddMode = false;
 let mapTransform = { x: 0, y: 0, scale: 1 };
 let mapDragging = false, mapDragStart = null;
 
-// Simplified country paths (Natural Earth projection, 1000x500 viewBox)
+// Country paths using equirectangular projection: x=(lon+180)/360*1000, y=(90-lat)/180*500
 const COUNTRIES = [
+  // Greenland
+  {id:'GL',name:'Greenland',path:'M 295,15 L 355,12 L 375,25 L 368,45 L 345,58 L 320,55 L 300,40 Z'},
   // North America
-  {id:'CA',name:'Canada',path:'M 70,60 L 280,60 L 290,80 L 270,100 L 250,90 L 230,110 L 200,100 L 180,120 L 150,110 L 120,130 L 90,120 L 70,90 Z'},
-  {id:'US',name:'United States',path:'M 80,130 L 260,130 L 270,110 L 250,90 L 240,120 L 220,115 L 200,125 L 180,120 L 150,130 L 120,125 L 100,140 L 80,155 Z M 50,155 L 80,155 L 80,130 L 70,90 L 50,100 L 40,130 Z M 30,200 L 55,190 L 55,175 L 35,175 Z'},
-  {id:'MX',name:'Mexico',path:'M 80,155 L 180,155 L 195,175 L 185,195 L 165,200 L 150,215 L 130,210 L 115,195 L 100,185 L 80,180 Z'},
-  {id:'GL',name:'Greenland',path:'M 310,20 L 370,20 L 380,40 L 360,55 L 330,55 L 310,40 Z'},
-  // Central America & Caribbean
-  {id:'GT',name:'Guatemala',path:'M 130,215 L 145,215 L 145,230 L 130,230 Z'},
-  {id:'CU',name:'Cuba',path:'M 175,195 L 205,193 L 205,202 L 175,204 Z'},
+  {id:'CA',name:'Canada',path:'M 50,28 L 290,25 L 300,42 L 280,58 L 260,55 L 240,68 L 210,65 L 190,80 L 168,78 L 148,92 L 120,90 L 95,105 L 70,100 L 52,115 L 45,90 L 50,55 Z'},
+  {id:'US',name:'United States',path:'M 52,115 L 70,100 L 95,105 L 120,90 L 148,92 L 168,78 L 190,80 L 210,65 L 238,68 L 258,75 L 262,115 L 242,128 L 210,130 L 180,128 L 148,130 L 118,128 L 88,132 L 68,138 L 52,138 Z M 22,168 L 50,162 L 52,148 L 32,148 Z'},
+  {id:'MX',name:'Mexico',path:'M 68,138 L 88,132 L 148,130 L 162,148 L 168,165 L 155,180 L 135,185 L 118,178 L 100,168 L 82,162 Z'},
+  {id:'CU',name:'Cuba',path:'M 155,182 L 190,178 L 192,188 L 157,192 Z'},
+  {id:'GT',name:'Guatemala',path:'M 118,182 L 132,180 L 134,192 L 120,194 Z'},
+  {id:'HN',name:'Honduras',path:'M 132,188 L 148,186 L 148,198 L 132,200 Z'},
   // South America
-  {id:'CO',name:'Colombia',path:'M 145,230 L 185,230 L 190,255 L 165,260 L 145,255 Z'},
-  {id:'VE',name:'Venezuela',path:'M 185,230 L 215,228 L 218,248 L 190,255 Z'},
-  {id:'BR',name:'Brazil',path:'M 165,260 L 250,248 L 265,280 L 260,320 L 230,340 L 195,335 L 175,310 L 165,285 Z'},
-  {id:'PE',name:'Peru',path:'M 140,260 L 165,260 L 165,300 L 145,305 L 130,285 Z'},
-  {id:'AR',name:'Argentina',path:'M 175,335 L 205,335 L 210,380 L 195,405 L 180,395 L 175,365 Z'},
-  {id:'CL',name:'Chile',path:'M 155,305 L 175,305 L 175,390 L 160,395 L 150,365 L 150,330 Z'},
-  {id:'BO',name:'Bolivia',path:'M 165,295 L 195,292 L 200,320 L 175,325 L 162,315 Z'},
-  {id:'PY',name:'Paraguay',path:'M 195,320 L 215,318 L 215,338 L 195,340 Z'},
-  {id:'UY',name:'Uruguay',path:'M 205,340 L 225,338 L 228,352 L 208,355 Z'},
+  {id:'CO',name:'Colombia',path:'M 132,218 L 172,215 L 178,240 L 155,245 L 132,240 Z'},
+  {id:'VE',name:'Venezuela',path:'M 172,215 L 210,212 L 215,232 L 178,238 Z'},
+  {id:'GY',name:'Guyana',path:'M 210,212 L 225,210 L 228,232 L 212,235 Z'},
+  {id:'BR',name:'Brazil',path:'M 155,245 L 258,235 L 268,270 L 262,315 L 235,338 L 200,338 L 175,315 L 162,285 L 155,265 Z'},
+  {id:'PE',name:'Peru',path:'M 118,248 L 155,245 L 158,290 L 135,298 L 115,278 Z'},
+  {id:'EC',name:'Ecuador',path:'M 112,238 L 132,235 L 133,252 L 112,255 Z'},
+  {id:'BO',name:'Bolivia',path:'M 155,285 L 192,280 L 198,312 L 172,318 L 155,305 Z'},
+  {id:'PY',name:'Paraguay',path:'M 192,312 L 215,310 L 215,332 L 192,334 Z'},
+  {id:'AR',name:'Argentina',path:'M 158,335 L 205,330 L 210,378 L 192,408 L 175,398 L 158,370 Z'},
+  {id:'CL',name:'Chile',path:'M 138,295 L 158,292 L 158,385 L 142,390 L 132,360 L 130,325 Z'},
+  {id:'UY',name:'Uruguay',path:'M 205,332 L 225,330 L 228,348 L 207,352 Z'},
   // Europe
-  {id:'NO',name:'Norway',path:'M 470,40 L 495,35 L 500,55 L 490,70 L 472,65 Z'},
-  {id:'SE',name:'Sweden',path:'M 490,40 L 505,35 L 508,65 L 495,70 L 490,55 Z'},
-  {id:'FI',name:'Finland',path:'M 505,30 L 525,28 L 528,60 L 510,65 L 506,50 Z'},
-  {id:'DK',name:'Denmark',path:'M 476,72 L 488,70 L 488,82 L 476,82 Z'},
-  {id:'GB',name:'United Kingdom',path:'M 450,72 L 468,70 L 470,90 L 455,92 Z'},
-  {id:'IE',name:'Ireland',path:'M 440,76 L 452,74 L 452,88 L 440,88 Z'},
-  {id:'PT',name:'Portugal',path:'M 442,112 L 450,112 L 450,130 L 442,130 Z'},
-  {id:'ES',name:'Spain',path:'M 448,102 L 480,100 L 482,118 L 450,120 L 446,115 Z'},
-  {id:'FR',name:'France',path:'M 455,88 L 485,88 L 488,110 L 460,112 L 454,102 Z'},
-  {id:'BE',name:'Belgium',path:'M 468,86 L 480,86 L 480,94 L 468,94 Z'},
-  {id:'NL',name:'Netherlands',path:'M 472,78 L 482,78 L 482,88 L 472,88 Z'},
-  {id:'DE',name:'Germany',path:'M 480,80 L 508,80 L 510,105 L 484,108 L 480,95 Z'},
-  {id:'CH',name:'Switzerland',path:'M 472,106 L 488,106 L 488,115 L 472,115 Z'},
-  {id:'AT',name:'Austria',path:'M 488,100 L 510,100 L 510,110 L 488,110 Z'},
-  {id:'IT',name:'Italy',path:'M 468,110 L 490,108 L 495,135 L 482,145 L 470,130 L 466,118 Z'},
-  {id:'PL',name:'Poland',path:'M 505,78 L 530,78 L 532,98 L 508,100 Z'},
-  {id:'CZ',name:'Czechia',path:'M 498,95 L 515,95 L 515,104 L 498,104 Z'},
-  {id:'SK',name:'Slovakia',path:'M 510,100 L 528,100 L 528,108 L 510,108 Z'},
-  {id:'HU',name:'Hungary',path:'M 505,105 L 525,105 L 526,115 L 505,116 Z'},
-  {id:'RO',name:'Romania',path:'M 520,100 L 545,100 L 548,118 L 522,120 Z'},
-  {id:'UA',name:'Ukraine',path:'M 520,80 L 562,78 L 565,100 L 522,102 Z'},
-  {id:'BY',name:'Belarus',path:'M 518,68 L 542,66 L 544,80 L 519,82 Z'},
-  {id:'EE',name:'Estonia',path:'M 516,56 L 530,56 L 530,64 L 516,64 Z'},
-  {id:'LV',name:'Latvia',path:'M 514,62 L 528,62 L 528,70 L 514,70 Z'},
-  {id:'LT',name:'Lithuania',path:'M 508,68 L 522,66 L 522,76 L 508,76 Z'},
-  {id:'GR',name:'Greece',path:'M 510,118 L 530,118 L 532,135 L 515,138 Z'},
-  {id:'BG',name:'Bulgaria',path:'M 522,112 L 542,112 L 543,124 L 522,126 Z'},
-  {id:'RS',name:'Serbia',path:'M 506,108 L 520,108 L 520,120 L 506,120 Z'},
-  {id:'HR',name:'Croatia',path:'M 490,108 L 506,108 L 507,118 L 492,120 Z'},
-  // Russia
-  {id:'RU',name:'Russia',path:'M 530,28 L 840,28 L 845,100 L 820,120 L 790,110 L 760,90 L 720,95 L 680,90 L 650,75 L 610,70 L 580,80 L 550,72 L 528,65 Z'},
-  // Middle East
-  {id:'TR',name:'Turkey',path:'M 538,120 L 585,115 L 590,132 L 540,138 Z'},
-  {id:'SY',name:'Syria',path:'M 570,132 L 590,130 L 593,145 L 572,147 Z'},
-  {id:'IQ',name:'Iraq',path:'M 575,140 L 600,138 L 604,162 L 577,165 Z'},
-  {id:'IR',name:'Iran',path:'M 595,128 L 640,125 L 645,158 L 600,162 Z'},
-  {id:'SA',name:'Saudi Arabia',path:'M 568,155 L 620,150 L 625,190 L 590,200 L 565,185 Z'},
-  {id:'AE',name:'UAE',path:'M 618,175 L 635,172 L 636,185 L 618,187 Z'},
-  {id:'YE',name:'Yemen',path:'M 575,195 L 620,190 L 622,210 L 578,215 Z'},
-  {id:'OM',name:'Oman',path:'M 622,168 L 642,162 L 648,190 L 628,195 Z'},
-  {id:'IL',name:'Israel',path:'M 553,148 L 562,148 L 562,162 L 553,162 Z'},
-  {id:'JO',name:'Jordan',path:'M 560,148 L 572,148 L 573,165 L 560,166 Z'},
-  {id:'KW',name:'Kuwait',path:'M 600,155 L 610,155 L 610,163 L 600,163 Z'},
-  // Africa
-  {id:'MA',name:'Morocco',path:'M 440,145 L 470,142 L 472,168 L 444,172 Z'},
-  {id:'DZ',name:'Algeria',path:'M 455,142 L 510,138 L 514,178 L 458,185 Z'},
-  {id:'LY',name:'Libya',path:'M 505,140 L 545,138 L 548,175 L 507,178 Z'},
-  {id:'EG',name:'Egypt',path:'M 540,140 L 570,138 L 573,165 L 542,168 Z'},
-  {id:'SD',name:'Sudan',path:'M 538,162 L 582,158 L 585,200 L 540,205 Z'},
-  {id:'ET',name:'Ethiopia',path:'M 558,198 L 600,195 L 605,225 L 560,230 Z'},
-  {id:'MR',name:'Mauritania',path:'M 428,158 L 460,155 L 462,192 L 430,195 Z'},
-  {id:'ML',name:'Mali',path:'M 448,175 L 490,172 L 492,218 L 450,222 Z'},
-  {id:'NE',name:'Niger',path:'M 480,172 L 520,170 L 522,208 L 482,212 Z'},
-  {id:'NG',name:'Nigeria',path:'M 478,210 L 520,208 L 522,245 L 480,248 Z'},
-  {id:'CM',name:'Cameroon',path:'M 498,235 L 518,233 L 520,258 L 500,260 Z'},
-  {id:'CD',name:'DR Congo',path:'M 505,248 L 550,244 L 555,292 L 508,296 Z'},
-  {id:'KE',name:'Kenya',path:'M 565,238 L 595,235 L 598,268 L 567,272 Z'},
-  {id:'TZ',name:'Tanzania',path:'M 548,268 L 588,265 L 590,298 L 550,300 Z'},
-  {id:'AO',name:'Angola',path:'M 500,290 L 535,288 L 537,325 L 502,328 Z'},
-  {id:'ZA',name:'South Africa',path:'M 498,328 L 555,325 L 558,368 L 525,378 L 500,362 Z'},
-  {id:'MZ',name:'Mozambique',path:'M 548,295 L 568,292 L 570,338 L 550,342 Z'},
-  {id:'ZM',name:'Zambia',path:'M 525,285 L 558,282 L 560,310 L 527,313 Z'},
-  {id:'GH',name:'Ghana',path:'M 460,220 L 478,218 L 480,245 L 462,248 Z'},
-  {id:'SN',name:'Senegal',path:'M 420,192 L 445,190 L 447,208 L 422,210 Z'},
-  {id:'CI',name:'Ivory Coast',path:'M 445,218 L 465,216 L 467,240 L 447,242 Z'},
-  {id:'SO',name:'Somalia',path:'M 580,210 L 610,205 L 615,248 L 582,255 Z'},
-  {id:'MG',name:'Madagascar',path:'M 595,290 L 610,285 L 615,335 L 598,340 Z'},
-  {id:'TN',name:'Tunisia',path:'M 488,132 L 502,130 L 503,150 L 489,152 Z'},
+  {id:'IS',name:'Iceland',path:'M 388,42 L 418,38 L 420,52 L 395,56 Z'},
+  {id:'NO',name:'Norway',path:'M 465,35 L 495,28 L 502,50 L 495,68 L 470,65 Z'},
+  {id:'SE',name:'Sweden',path:'M 492,32 L 510,30 L 512,65 L 496,70 L 490,52 Z'},
+  {id:'FI',name:'Finland',path:'M 508,28 L 530,25 L 532,60 L 510,68 L 506,48 Z'},
+  {id:'EE',name:'Estonia',path:'M 516,58 L 530,56 L 530,65 L 516,66 Z'},
+  {id:'LV',name:'Latvia',path:'M 512,64 L 528,62 L 528,71 L 512,72 Z'},
+  {id:'LT',name:'Lithuania',path:'M 508,70 L 520,68 L 520,78 L 508,79 Z'},
+  {id:'DK',name:'Denmark',path:'M 474,68 L 486,66 L 487,78 L 474,79 Z'},
+  {id:'GB',name:'United Kingdom',path:'M 441,65 L 458,62 L 462,85 L 450,90 L 440,80 Z'},
+  {id:'IE',name:'Ireland',path:'M 430,72 L 442,70 L 443,85 L 430,86 Z'},
+  {id:'PT',name:'Portugal',path:'M 438,108 L 446,107 L 446,125 L 438,126 Z'},
+  {id:'ES',name:'Spain',path:'M 444,98 L 482,95 L 484,115 L 448,120 L 444,112 Z'},
+  {id:'FR',name:'France',path:'M 452,84 L 484,82 L 486,108 L 455,110 L 450,99 Z'},
+  {id:'BE',name:'Belgium',path:'M 466,82 L 479,81 L 479,90 L 466,91 Z'},
+  {id:'NL',name:'Netherlands',path:'M 468,74 L 479,73 L 479,83 L 468,84 Z'},
+  {id:'DE',name:'Germany',path:'M 478,74 L 508,72 L 510,100 L 480,102 L 478,88 Z'},
+  {id:'CH',name:'Switzerland',path:'M 468,104 L 484,103 L 484,112 L 468,113 Z'},
+  {id:'AT',name:'Austria',path:'M 486,98 L 510,97 L 510,107 L 486,108 Z'},
+  {id:'IT',name:'Italy',path:'M 465,105 L 488,103 L 492,130 L 480,142 L 468,128 L 463,116 Z'},
+  {id:'PL',name:'Poland',path:'M 505,74 L 530,72 L 532,96 L 507,98 Z'},
+  {id:'CZ',name:'Czechia',path:'M 494,92 L 514,91 L 514,100 L 494,101 Z'},
+  {id:'SK',name:'Slovakia',path:'M 508,98 L 526,97 L 526,106 L 508,107 Z'},
+  {id:'HU',name:'Hungary',path:'M 502,104 L 524,103 L 524,114 L 502,115 Z'},
+  {id:'RO',name:'Romania',path:'M 518,96 L 544,94 L 546,114 L 519,117 Z'},
+  {id:'UA',name:'Ukraine',path:'M 518,76 L 564,72 L 567,96 L 520,100 Z'},
+  {id:'BY',name:'Belarus',path:'M 515,65 L 541,62 L 543,77 L 517,79 Z'},
+  {id:'MD',name:'Moldova',path:'M 540,104 L 548,103 L 548,114 L 540,115 Z'},
+  {id:'BG',name:'Bulgaria',path:'M 520,112 L 542,111 L 543,123 L 521,125 Z'},
+  {id:'GR',name:'Greece',path:'M 506,118 L 526,117 L 528,134 L 513,137 Z'},
+  {id:'RS',name:'Serbia',path:'M 504,106 L 518,105 L 518,118 L 504,119 Z'},
+  {id:'HR',name:'Croatia',path:'M 488,106 L 504,105 L 505,116 L 489,118 Z'},
+  {id:'BA',name:'Bosnia',path:'M 494,112 L 506,111 L 506,122 L 494,123 Z'},
+  {id:'AL',name:'Albania',path:'M 504,118 L 512,117 L 512,128 L 504,129 Z'},
+  {id:'MK',name:'N. Macedonia',path:'M 512,118 L 523,117 L 523,126 L 512,127 Z'},
+  // Russia (large shape)
+  {id:'RU',name:'Russia',path:'M 530,22 L 840,15 L 848,90 L 830,115 L 808,108 L 785,95 L 758,88 L 728,92 L 692,88 L 660,72 L 625,68 L 590,76 L 565,68 L 545,62 L 528,62 Z'},
+  // Middle East & Caucasus
+  {id:'TR',name:'Turkey',path:'M 534,118 L 588,112 L 593,130 L 538,136 Z'},
+  {id:'GE',name:'Georgia',path:'M 572,110 L 592,108 L 593,118 L 572,120 Z'},
+  {id:'AM',name:'Armenia',path:'M 586,118 L 596,117 L 597,126 L 586,127 Z'},
+  {id:'AZ',name:'Azerbaijan',path:'M 594,114 L 606,112 L 608,126 L 595,128 Z'},
+  {id:'SY',name:'Syria',path:'M 566,130 L 592,128 L 593,144 L 568,147 Z'},
+  {id:'LB',name:'Lebanon',path:'M 558,136 L 565,135 L 565,144 L 558,145 Z'},
+  {id:'IL',name:'Israel',path:'M 551,143 L 560,143 L 560,158 L 551,159 Z'},
+  {id:'JO',name:'Jordan',path:'M 557,148 L 571,147 L 572,164 L 557,166 Z'},
+  {id:'IQ',name:'Iraq',path:'M 572,134 L 600,132 L 603,158 L 574,162 Z'},
+  {id:'IR',name:'Iran',path:'M 596,126 L 644,120 L 648,156 L 602,162 Z'},
+  {id:'KW',name:'Kuwait',path:'M 596,154 L 606,153 L 606,163 L 596,164 Z'},
+  {id:'SA',name:'Saudi Arabia',path:'M 556,158 L 620,152 L 626,192 L 590,202 L 558,188 Z'},
+  {id:'AE',name:'UAE',path:'M 616,172 L 634,170 L 634,183 L 617,185 Z'},
+  {id:'QA',name:'Qatar',path:'M 608,168 L 615,167 L 615,177 L 608,178 Z'},
+  {id:'YE',name:'Yemen',path:'M 570,195 L 618,190 L 620,208 L 572,214 Z'},
+  {id:'OM',name:'Oman',path:'M 620,166 L 642,160 L 648,192 L 628,198 Z'},
   // Central Asia
-  {id:'KZ',name:'Kazakhstan',path:'M 610,80 L 700,75 L 705,118 L 650,125 L 612,118 Z'},
-  {id:'UZ',name:'Uzbekistan',path:'M 638,118 L 678,115 L 680,132 L 640,135 Z'},
-  {id:'TM',name:'Turkmenistan',path:'M 618,128 L 655,125 L 658,145 L 620,148 Z'},
-  {id:'AF',name:'Afghanistan',path:'M 648,135 L 690,132 L 692,160 L 650,163 Z'},
-  {id:'PK',name:'Pakistan',path:'M 672,148 L 718,145 L 720,178 L 675,182 Z'},
+  {id:'KZ',name:'Kazakhstan',path:'M 606,72 L 700,65 L 705,110 L 648,118 L 608,112 Z'},
+  {id:'TM',name:'Turkmenistan',path:'M 614,125 L 655,120 L 658,142 L 616,146 Z'},
+  {id:'UZ',name:'Uzbekistan',path:'M 634,112 L 678,108 L 680,128 L 636,132 Z'},
+  {id:'KG',name:'Kyrgyzstan',path:'M 674,108 L 698,106 L 699,118 L 675,120 Z'},
+  {id:'TJ',name:'Tajikistan',path:'M 668,124 L 690,122 L 692,138 L 670,140 Z'},
+  {id:'AF',name:'Afghanistan',path:'M 644,130 L 690,126 L 693,158 L 648,162 Z'},
+  {id:'PK',name:'Pakistan',path:'M 668,146 L 716,142 L 720,178 L 672,182 Z'},
   // South Asia
-  {id:'IN',name:'India',path:'M 680,158 L 730,155 L 738,210 L 705,230 L 680,215 L 675,185 Z'},
-  {id:'BD',name:'Bangladesh',path:'M 730,170 L 748,168 L 750,185 L 732,187 Z'},
-  {id:'LK',name:'Sri Lanka',path:'M 710,230 L 722,228 L 724,245 L 712,247 Z'},
-  {id:'NP',name:'Nepal',path:'M 710,152 L 735,150 L 736,162 L 712,164 Z'},
-  // East Asia
-  {id:'CN',name:'China',path:'M 720,100 L 820,95 L 828,155 L 800,165 L 760,160 L 730,155 L 718,128 Z'},
-  {id:'MN',name:'Mongolia',path:'M 718,80 L 820,75 L 822,100 L 720,105 Z'},
-  {id:'KR',name:'South Korea',path:'M 820,128 L 838,126 L 840,145 L 822,147 Z'},
-  {id:'KP',name:'North Korea',path:'M 815,112 L 838,110 L 840,130 L 817,132 Z'},
-  {id:'JP',name:'Japan',path:'M 840,108 L 865,105 L 868,140 L 845,145 Z'},
-  {id:'TW',name:'Taiwan',path:'M 832,158 L 842,156 L 843,168 L 833,170 Z'},
-  // Southeast Asia
-  {id:'TH',name:'Thailand',path:'M 750,185 L 775,182 L 778,215 L 752,218 Z'},
-  {id:'VN',name:'Vietnam',path:'M 772,175 L 795,172 L 798,215 L 774,220 Z'},
-  {id:'MM',name:'Myanmar',path:'M 738,162 L 762,158 L 765,192 L 740,196 Z'},
-  {id:'PH',name:'Philippines',path:'M 820,185 L 848,180 L 852,220 L 823,225 Z'},
-  {id:'ID',name:'Indonesia',path:'M 755,238 L 870,232 L 875,258 L 758,262 Z'},
-  {id:'MY',name:'Malaysia',path:'M 762,218 L 800,215 L 802,232 L 764,235 Z'},
-  {id:'SG',name:'Singapore',path:'M 782,234 L 790,234 L 790,240 L 782,240 Z'},
+  {id:'IN',name:'India',path:'M 672,158 L 730,152 L 738,208 L 706,228 L 678,214 L 670,188 Z'},
+  {id:'NP',name:'Nepal',path:'M 704,152 L 732,149 L 733,160 L 705,162 Z'},
+  {id:'BD',name:'Bangladesh',path:'M 728,168 L 746,166 L 748,182 L 730,184 Z'},
+  {id:'LK',name:'Sri Lanka',path:'M 706,228 L 718,226 L 720,242 L 708,244 Z'},
+  // East & SE Asia
+  {id:'CN',name:'China',path:'M 702,92 L 820,85 L 828,148 L 800,162 L 760,158 L 728,152 L 714,124 L 704,105 Z'},
+  {id:'MN',name:'Mongolia',path:'M 702,72 L 822,65 L 824,92 L 705,98 Z'},
+  {id:'KP',name:'North Korea',path:'M 812,108 L 834,106 L 836,122 L 813,124 Z'},
+  {id:'KR',name:'South Korea',path:'M 818,122 L 836,120 L 837,136 L 820,138 Z'},
+  {id:'JP',name:'Japan',path:'M 840,100 L 860,97 L 864,108 L 857,125 L 845,130 L 838,115 Z'},
+  {id:'TW',name:'Taiwan',path:'M 828,158 L 838,156 L 839,168 L 829,170 Z'},
+  {id:'MM',name:'Myanmar',path:'M 732,158 L 758,154 L 760,188 L 734,194 Z'},
+  {id:'TH',name:'Thailand',path:'M 744,182 L 772,178 L 775,212 L 748,216 Z'},
+  {id:'VN',name:'Vietnam',path:'M 768,172 L 793,168 L 796,212 L 770,218 Z'},
+  {id:'KH',name:'Cambodia',path:'M 762,208 L 782,206 L 783,222 L 762,224 Z'},
+  {id:'LA',name:'Laos',path:'M 754,172 L 772,170 L 773,196 L 755,198 Z'},
+  {id:'MY',name:'Malaysia',path:'M 758,214 L 800,211 L 801,228 L 759,231 Z'},
+  {id:'PH',name:'Philippines',path:'M 816,178 L 845,174 L 848,215 L 818,220 Z'},
+  {id:'ID',name:'Indonesia',path:'M 750,235 L 870,228 L 875,255 L 752,260 Z'},
+  {id:'PG',name:'Papua New Guinea',path:'M 862,248 L 905,242 L 907,268 L 865,272 Z'},
+  // Africa
+  {id:'MA',name:'Morocco',path:'M 430,140 L 468,136 L 470,162 L 433,168 Z'},
+  {id:'DZ',name:'Algeria',path:'M 452,136 L 510,132 L 513,174 L 454,180 Z'},
+  {id:'TN',name:'Tunisia',path:'M 484,126 L 498,124 L 500,146 L 485,148 Z'},
+  {id:'LY',name:'Libya',path:'M 502,132 L 545,128 L 548,168 L 505,172 Z'},
+  {id:'EG',name:'Egypt',path:'M 538,132 L 572,128 L 575,158 L 541,162 Z'},
+  {id:'MR',name:'Mauritania',path:'M 420,175 L 454,172 L 456,210 L 422,215 Z'},
+  {id:'ML',name:'Mali',path:'M 444,170 L 488,168 L 490,215 L 447,220 Z'},
+  {id:'NE',name:'Niger',path:'M 476,168 L 520,165 L 522,204 L 478,208 Z'},
+  {id:'SD',name:'Sudan',path:'M 534,158 L 582,152 L 585,198 L 538,204 Z'},
+  {id:'SS',name:'S. Sudan',path:'M 530,198 L 572,194 L 574,220 L 532,225 Z'},
+  {id:'ER',name:'Eritrea',path:'M 574,175 L 596,172 L 597,190 L 575,193 Z'},
+  {id:'ET',name:'Ethiopia',path:'M 555,192 L 602,188 L 606,225 L 558,230 Z'},
+  {id:'DJ',name:'Djibouti',path:'M 597,192 L 606,191 L 607,200 L 598,201 Z'},
+  {id:'SO',name:'Somalia',path:'M 578,202 L 612,196 L 616,245 L 580,252 Z'},
+  {id:'SN',name:'Senegal',path:'M 415,185 L 440,183 L 441,200 L 416,203 Z'},
+  {id:'GN',name:'Guinea',path:'M 420,205 L 440,203 L 441,220 L 421,222 Z'},
+  {id:'SL',name:'Sierra Leone',path:'M 415,218 L 430,216 L 430,228 L 415,230 Z'},
+  {id:'LR',name:'Liberia',path:'M 428,222 L 445,220 L 445,235 L 428,237 Z'},
+  {id:'CI',name:'Ivory Coast',path:'M 440,215 L 464,213 L 465,238 L 441,241 Z'},
+  {id:'GH',name:'Ghana',path:'M 456,212 L 476,210 L 477,240 L 457,243 Z'},
+  {id:'BF',name:'Burkina Faso',path:'M 450,192 L 480,190 L 481,212 L 451,215 Z'},
+  {id:'TG',name:'Togo',path:'M 470,212 L 478,211 L 478,238 L 470,239 Z'},
+  {id:'BJ',name:'Benin',path:'M 476,208 L 486,207 L 486,238 L 476,239 Z'},
+  {id:'NG',name:'Nigeria',path:'M 474,202 L 520,198 L 522,242 L 476,247 Z'},
+  {id:'CM',name:'Cameroon',path:'M 496,230 L 516,228 L 518,255 L 498,258 Z'},
+  {id:'GA',name:'Gabon',path:'M 492,255 L 510,254 L 511,278 L 492,280 Z'},
+  {id:'CG',name:'Congo',path:'M 505,250 L 524,248 L 525,272 L 506,274 Z'},
+  {id:'CD',name:'DR Congo',path:'M 502,248 L 550,242 L 554,292 L 505,296 Z'},
+  {id:'CF',name:'C. African Rep.',path:'M 510,218 L 558,214 L 560,240 L 512,244 Z'},
+  {id:'TD',name:'Chad',path:'M 498,162 L 538,158 L 540,210 L 500,215 Z'},
+  {id:'UG',name:'Uganda',path:'M 552,235 L 574,233 L 574,255 L 553,258 Z'},
+  {id:'RW',name:'Rwanda',path:'M 555,255 L 566,254 L 566,264 L 555,265 Z'},
+  {id:'BI',name:'Burundi',path:'M 554,262 L 564,261 L 564,272 L 554,273 Z'},
+  {id:'KE',name:'Kenya',path:'M 560,232 L 596,228 L 598,265 L 562,270 Z'},
+  {id:'TZ',name:'Tanzania',path:'M 544,265 L 586,262 L 588,298 L 546,302 Z'},
+  {id:'MZ',name:'Mozambique',path:'M 542,292 L 568,288 L 570,338 L 545,342 Z'},
+  {id:'ZM',name:'Zambia',path:'M 520,280 L 558,276 L 560,308 L 522,312 Z'},
+  {id:'ZW',name:'Zimbabwe',path:'M 528,308 L 556,305 L 557,328 L 529,332 Z'},
+  {id:'AO',name:'Angola',path:'M 494,285 L 532,282 L 534,322 L 496,326 Z'},
+  {id:'NA',name:'Namibia',path:'M 490,322 L 528,318 L 530,355 L 494,360 Z'},
+  {id:'BW',name:'Botswana',path:'M 520,330 L 552,328 L 553,358 L 522,360 Z'},
+  {id:'ZA',name:'South Africa',path:'M 492,355 L 552,350 L 555,390 L 525,400 L 495,382 Z'},
+  {id:'SZ',name:'Eswatini',path:'M 547,355 L 555,354 L 555,362 L 547,363 Z'},
+  {id:'LS',name:'Lesotho',path:'M 528,368 L 538,367 L 538,376 L 528,377 Z'},
+  {id:'MG',name:'Madagascar',path:'M 592,285 L 609,280 L 614,332 L 596,338 Z'},
   // Oceania
-  {id:'AU',name:'Australia',path:'M 790,290 L 900,285 L 910,360 L 870,378 L 820,375 L 790,345 Z'},
-  {id:'NZ',name:'New Zealand',path:'M 920,358 L 940,352 L 942,380 L 922,385 Z'},
-  {id:'PG',name:'Papua New Guinea',path:'M 868,252 L 908,248 L 910,272 L 870,276 Z'},
+  {id:'AU',name:'Australia',path:'M 782,282 L 900,275 L 912,355 L 875,378 L 825,375 L 790,345 L 778,315 Z'},
+  {id:'NZ',name:'New Zealand',path:'M 920,350 L 938,345 L 940,378 L 922,384 Z'},
 ];
 
 const CONTINENTS = [
-  { name:'North America', viewBox:'0 0 330 300', label:'N. America' },
-  { name:'South America', viewBox:'120 230 200 200', label:'S. America' },
-  { name:'Europe', viewBox:'420 30 180 140', label:'Europe' },
-  { name:'Africa', viewBox:'400 130 260 260', label:'Africa' },
-  { name:'Asia', viewBox:'530 60 380 220', label:'Asia' },
-  { name:'Oceania', viewBox:'740 240 220 180', label:'Oceania' },
+  { name:'North America', viewBox:'0 0 310 280', label:'N. America' },
+  { name:'South America', viewBox:'100 210 200 220', label:'S. America' },
+  { name:'Europe', viewBox:'415 25 160 140', label:'Europe' },
+  { name:'Africa', viewBox:'408 125 225 290', label:'Africa' },
+  { name:'Asia', viewBox:'530 55 400 230', label:'Asia' },
+  { name:'Oceania', viewBox:'740 240 225 185', label:'Oceania' },
 ];
 
 function initWorldMap() {
@@ -1970,9 +2045,9 @@ function initWorldMap() {
     const path = document.createElementNS('http://www.w3.org/2000/svg','path');
     path.setAttribute('d', country.path);
     path.setAttribute('id', 'country-' + country.id);
-    path.setAttribute('fill', isVisited ? 'rgba(200,240,96,0.18)' : 'rgba(16,28,45,0.9)');
-    path.setAttribute('stroke', isVisited ? '#c8f060' : '#f06060');
-    path.setAttribute('stroke-width', isVisited ? '1.5' : '0.8');
+    path.setAttribute('fill', isVisited ? 'rgba(200,240,96,0.18)' : 'rgba(26,40,62,0.95)');
+    path.setAttribute('stroke', isVisited ? '#c8f060' : 'rgba(96,160,210,0.35)');
+    path.setAttribute('stroke-width', isVisited ? '1.5' : '0.6');
     path.style.cursor = 'pointer';
     path.style.transition = 'fill 0.3s, stroke 0.3s';
     if (isVisited) path.setAttribute('filter', 'url(#countryGlow)');
@@ -1980,14 +2055,14 @@ function initWorldMap() {
     path.addEventListener('mouseenter', (e) => {
       showMapTooltip(e, country.name, isVisited);
       if (!visitedCountries.includes(country.id)) {
-        path.setAttribute('fill', 'rgba(240,96,96,0.2)');
+        path.setAttribute('fill', 'rgba(96,160,210,0.2)');
       }
     });
     path.addEventListener('mousemove', (e) => showMapTooltip(e, country.name, visitedCountries.includes(country.id)));
     path.addEventListener('mouseleave', () => {
       hideMapTooltip();
       if (!visitedCountries.includes(country.id)) {
-        path.setAttribute('fill', 'rgba(16,28,45,0.9)');
+        path.setAttribute('fill', 'rgba(26,40,62,0.95)');
       }
     });
     path.addEventListener('click', () => {
@@ -2033,9 +2108,9 @@ function toggleVisited(id, name) {
   const path = document.getElementById('country-' + id);
   if (path) {
     const isNowVisited = visitedCountries.includes(id);
-    path.setAttribute('fill', isNowVisited ? 'rgba(200,240,96,0.18)' : 'rgba(16,28,45,0.9)');
-    path.setAttribute('stroke', isNowVisited ? '#c8f060' : '#f06060');
-    path.setAttribute('stroke-width', isNowVisited ? '1.5' : '0.8');
+    path.setAttribute('fill', isNowVisited ? 'rgba(200,240,96,0.18)' : 'rgba(26,40,62,0.95)');
+    path.setAttribute('stroke', isNowVisited ? '#c8f060' : 'rgba(96,160,210,0.35)');
+    path.setAttribute('stroke-width', isNowVisited ? '1.5' : '0.6');
     if (isNowVisited) path.setAttribute('filter','url(#countryGlow)');
     else path.removeAttribute('filter');
   }
@@ -2101,6 +2176,7 @@ const _origSwitchSidebarView = switchSidebarView;
 window.switchSidebarView = function(name) {
   _origSwitchSidebarView(name);
   if (name === 'worldmap') setTimeout(initWorldMap, 50);
+  if (name === 'settings') setTimeout(initSupabase, 50);
 };
 
 </script>
